@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>불편함 해결소 — 매일 쓰는 작은 도구 모음</title>
+  <meta name="description" content="평소 불편했던 것들을 하나씩 도구로 만들어 모아둔 무료 웹 도구 모음. JSON 포맷터, 타임스탬프 변환기, Base64, 색상 변환기 등." />
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>" />
+  <link rel="stylesheet" href="assets/style.css" />
+
+  <!-- ===== Google AdSense ===== -->
+  <!-- 애드센스 승인 후 아래 주석을 풀고 ca-pub-XXXXXXXXXXXXXXXX 를 본인 게시자 ID로 교체하세요 -->
+  <!--
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  -->
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html">
+        <span class="logo">🛠️</span>
+        <span>불편함 해결소<small>매일 쓰는 작은 도구 모음</small></span>
+      </a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="테마 전환">🌙</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>불편한 건 그냥 만들어 씁니다</h1>
+      <p>매번 검색하기 귀찮고, 광고 가득한 사이트를 거치기도 싫었던 작은 기능들. 하나씩 직접 만들어 여기에 모읍니다.</p>
+    </section>
+
+    <!-- 광고 슬롯 (상단) -->
+    <div class="ad-slot" aria-label="광고 영역">광고 영역 (애드센스 승인 후 표시)</div>
+
+    <h2 class="section-title">개발자 도구 <span class="pill">DEV</span></h2>
+    <div class="grid">
+      <a class="card" href="tools/json-formatter.html">
+        <div class="emoji">🧩</div>
+        <h3>JSON 포맷터 / 검증기</h3>
+        <p>엉킨 JSON을 보기 좋게 정렬하고 오류 위치를 찾아줍니다.</p>
+      </a>
+      <a class="card" href="tools/timestamp.html">
+        <div class="emoji">⏱️</div>
+        <h3>타임스탬프 변환기</h3>
+        <p>Unix 타임스탬프 ↔ 사람이 읽는 날짜를 양방향 변환합니다.</p>
+      </a>
+      <a class="card" href="tools/base64.html">
+        <div class="emoji">🔁</div>
+        <h3>Base64 인코더 / 디코더</h3>
+        <p>텍스트를 Base64로 인코딩하거나 다시 디코딩합니다.</p>
+      </a>
+      <a class="card" href="tools/color-converter.html">
+        <div class="emoji">🎨</div>
+        <h3>색상 변환기</h3>
+        <p>HEX · RGB · HSL 색상값을 서로 변환하고 미리봅니다.</p>
+      </a>
+    </div>
+
+    <h2 class="section-title">게임 도구 <span class="pill">GAME</span></h2>
+    <div class="grid">
+      <a class="card" href="tools/cube-calculator.html">
+        <div class="emoji">🎲</div>
+        <h3>메이플 큐브 기댓값 계산기</h3>
+        <p>목표 옵션까지 기대 큐브 수, 예상 비용, N개 안 성공 확률을 계산합니다.</p>
+      </a>
+      <a class="card" href="tools/starforce-calculator.html">
+        <div class="emoji">⭐</div>
+        <h3>메이플 스타포스 강화 계산기</h3>
+        <p>레벨·현재/목표 스타를 넣으면 평균 강화 비용과 확신도 그래프를 계산합니다.</p>
+      </a>
+      <a class="card" href="tools/potion-calculator.html">
+        <div class="emoji">⚗️</div>
+        <h3>메이플 비약 제작 순이익 계산기</h3>
+        <p>소재비·소경비 재료비·판매가·경매장 수수료로 피로도당 순이익을 계산합니다.</p>
+      </a>
+    </div>
+
+    <h2 class="section-title">곧 추가될 도구 <span class="pill">SOON</span></h2>
+    <div class="grid">
+      <div class="card soon">
+        <div class="emoji">💡</div>
+        <h3>당신의 아이디어</h3>
+        <p>불편했던 기능이 생기면 여기에 새 카드로 추가됩니다.</p>
+        <span class="tag">추가 예정</span>
+      </div>
+    </div>
+
+    <!-- 광고 슬롯 (하단) -->
+    <div class="ad-slot" aria-label="광고 영역">광고 영역 (애드센스 승인 후 표시)</div>
+  </main>
+
+  <footer class="site-footer">
+    <nav>
+      <a href="index.html">홈</a>
+      <a href="tools/json-formatter.html">JSON</a>
+      <a href="tools/timestamp.html">타임스탬프</a>
+      <a href="tools/base64.html">Base64</a>
+      <a href="tools/color-converter.html">색상</a>
+    </nav>
+    <div>© 2026 불편함 해결소 · 모든 도구는 브라우저에서만 동작하며 데이터를 서버로 보내지 않습니다.</div>
+  </footer>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>

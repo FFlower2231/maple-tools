@@ -1,0 +1,4 @@
+# Google AdSense ads.txt
+# 애드센스 승인 후, 아래 줄의 pub-XXXXXXXXXXXXXXXX 를 본인 게시자 ID(숫자)로 교체하세요.
+# 이 파일은 사이트 최상위(루트)에 위치해야 합니다. 예: https://example.com/ads.txt
+google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
