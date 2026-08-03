@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
 
-# 사이트맵 (배포 후 도메인으로 교체하세요)
-Sitemap: https://example.com/sitemap.xml
+Sitemap: https://fflower2231.github.io/maple-tools/sitemap.xml
