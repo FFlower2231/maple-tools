@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unix 타임스탬프 변환기 — 불편함 해결소</title>
+  <meta name="description" content="Unix 타임스탬프와 사람이 읽는 날짜를 양방향으로 변환합니다. 초/밀리초, 로컬/UTC 지원. 무료 온라인 도구." />
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>" />
+  <link rel="stylesheet" href="../assets/style.css" />
+  <!-- 애드센스 승인 후 아래 주석 해제 + 게시자 ID 교체
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  -->
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="../index.html"><span class="logo">🛠️</span><span>불편함 해결소<small>매일 쓰는 작은 도구 모음</small></span></a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="테마 전환">🌙</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="breadcrumb"><a href="../index.html">홈</a> › 개발자 도구 › 타임스탬프 변환기</div>
+    <div class="tool-head">
+      <h1>⏱️ Unix 타임스탬프 변환기</h1>
+      <p class="desc">타임스탬프 ↔ 날짜를 양방향으로 변환합니다.</p>
+    </div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+
+    <div class="panel">
+      <div class="field" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+        <div><label style="margin:0">지금</label><div class="mono" id="now" style="color:var(--text-muted)"></div></div>
+        <button class="btn" onclick="useNow()">현재 시각 넣기</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="margin-top:0">타임스탬프 → 날짜</h3>
+      <div class="field">
+        <label for="ts">Unix 타임스탬프</label>
+        <input type="text" id="ts" class="mono" placeholder="예: 1700000000 또는 1700000000000" oninput="tsToDate()" />
+      </div>
+      <div class="field">
+        <label>단위</label>
+        <select id="unit" onchange="tsToDate()">
+          <option value="auto">자동 감지</option>
+          <option value="s">초 (seconds)</option>
+          <option value="ms">밀리초 (milliseconds)</option>
+        </select>
+      </div>
+      <div class="out-grid">
+        <div class="out"><span>로컬 시간</span><b id="o_local">—</b></div>
+        <div class="out"><span>UTC</span><b id="o_utc">—</b></div>
+        <div class="out"><span>ISO 8601</span><b id="o_iso">—</b></div>
+        <div class="out"><span>상대 시간</span><b id="o_rel">—</b></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="margin-top:0">날짜 → 타임스탬프</h3>
+      <div class="field">
+        <label for="dt">날짜·시간 선택</label>
+        <input type="datetime-local" id="dt" step="1" oninput="dateToTs()" style="font-family:inherit" />
+      </div>
+      <div class="out-grid">
+        <div class="out"><span>초</span><b id="r_s">—</b></div>
+        <div class="out"><span>밀리초</span><b id="r_ms">—</b></div>
+      </div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn" onclick="copyText(document.getElementById('r_s').textContent, this)">초 복사</button>
+        <button class="btn" onclick="copyText(document.getElementById('r_ms').textContent, this)">밀리초 복사</button>
+      </div>
+    </div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+  </main>
+
+  <footer class="site-footer">
+    <nav><a href="../index.html">홈</a><a href="json-formatter.html">JSON</a><a href="base64.html">Base64</a><a href="color-converter.html">색상</a></nav>
+    <div>© 2026 불편함 해결소 · 모든 계산은 브라우저에서 처리됩니다.</div>
+  </footer>
+
+  <script src="../assets/app.js"></script>
+  <script>
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function fmtLocal(d){
+      return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+    }
+    function fmtUTC(d){
+      return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())+' '+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+':'+pad(d.getUTCSeconds())+' UTC';
+    }
+    function relTime(d){
+      var diff = (d.getTime() - Date.now())/1000;
+      var future = diff > 0; var s = Math.abs(diff);
+      var u = [['년',31536000],['일',86400],['시간',3600],['분',60],['초',1]];
+      for (var i=0;i<u.length;i++){ if (s>=u[i][1]){ var v=Math.floor(s/u[i][1]); return v+u[i][0]+(future?' 후':' 전'); } }
+      return '방금';
+    }
+    function tsToDate(){
+      var raw = document.getElementById('ts').value.trim();
+      var ids=['o_local','o_utc','o_iso','o_rel'];
+      if(!raw || isNaN(Number(raw))){ ids.forEach(function(id){document.getElementById(id).textContent='—';}); return; }
+      var num = Number(raw);
+      var unit = document.getElementById('unit').value;
+      var ms;
+      if (unit==='ms') ms=num;
+      else if (unit==='s') ms=num*1000;
+      else ms = (raw.replace('-','').length>=13) ? num : num*1000; // auto
+      var d = new Date(ms);
+      if (isNaN(d.getTime())){ ids.forEach(function(id){document.getElementById(id).textContent='유효하지 않음';}); return; }
+      document.getElementById('o_local').textContent=fmtLocal(d);
+      document.getElementById('o_utc').textContent=fmtUTC(d);
+      document.getElementById('o_iso').textContent=d.toISOString();
+      document.getElementById('o_rel').textContent=relTime(d);
+    }
+    function dateToTs(){
+      var v = document.getElementById('dt').value;
+      if(!v){ document.getElementById('r_s').textContent='—'; document.getElementById('r_ms').textContent='—'; return; }
+      var d = new Date(v);
+      document.getElementById('r_s').textContent = Math.floor(d.getTime()/1000);
+      document.getElementById('r_ms').textContent = d.getTime();
+    }
+    function useNow(){
+      var now = Math.floor(Date.now()/1000);
+      document.getElementById('ts').value = now;
+      document.getElementById('unit').value = 's';
+      tsToDate();
+      var d = new Date();
+      document.getElementById('dt').value = d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+      dateToTs();
+    }
+    function tick(){ document.getElementById('now').textContent = fmtLocal(new Date()) + '  ·  ' + Math.floor(Date.now()/1000); }
+    tick(); setInterval(tick, 1000);
+  </script>
+</body>
+</html>

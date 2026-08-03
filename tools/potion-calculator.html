@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>메이플 비약 제작 순이익 계산기 (소재비·소경비) — 불편함 해결소</title>
+  <meta name="description" content="소형 재물 획득의 비약, 소형 고농축 경험 축적의 비약, 고급 보스 킬러의 비약의 재료비·판매가·경매장 수수료를 넣으면 피로도 500 기준 순이익을 계산합니다. 쥬니퍼베리 씨앗 오일 자작 이득도 계산." />
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚗️</text></svg>" />
+  <link rel="stylesheet" href="../assets/style.css" />
+  <!-- 애드센스 승인 후 아래 주석 해제 + 게시자 ID 교체
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  -->
+  <style>
+    .hint { font-size:.82rem; color:var(--text-muted); margin-top:6px; }
+    /* 모든 숫자 입력칸의 증감(스피너) 버튼 제거 */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+    input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+    .budget { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .budget input { max-width:160px; }
+    .recipe h3 { margin:0 0 4px; }
+    .recipe .sub { font-size:.82rem; color:var(--text-muted); margin:0 0 14px; }
+    table.mat { width:100%; border-collapse:collapse; }
+    table.mat th { font-size:.74rem; color:var(--text-muted); font-weight:600; text-align:left; padding:0 6px 6px; }
+    table.mat td { padding:3px 6px; }
+    table.mat input { width:100%; padding:8px 10px; }
+    table.mat input.locked { background:var(--surface-2); color:var(--text-muted); border-style:dashed; cursor:default; }
+    table.mat .num { font-family:ui-monospace,monospace; }
+    table.mat td.cost { font-family:ui-monospace,monospace; font-size:.82rem; color:var(--text-muted); white-space:nowrap; text-align:right; }
+    .col-name { width:54%; } .col-qty { width:22%; }
+    .price-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px 14px; }
+    .price-item label { display:block; font-size:.82rem; font-weight:600; margin-bottom:4px; }
+    .price-item input { width:100%; padding:8px 10px; }
+    .mini-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+    @media(max-width:560px){ .mini-row { grid-template-columns:1fr; } }
+    .mini-row label { font-size:.82rem; font-weight:600; display:block; margin-bottom:4px; }
+    .mini-row input.locked { background:var(--surface-2); color:var(--text-muted); border-style:dashed; cursor:default; }
+    /* 잠긴 입력칸의 숫자 증감 버튼 제거 */
+    input.locked::-webkit-outer-spin-button,
+    input.locked::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+    input.locked[type=number] { -moz-appearance:textfield; appearance:textfield; }
+    .res { margin-top:16px; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+    .res .line { display:flex; justify-content:space-between; padding:4px 0; font-size:.92rem; }
+    .res .line b { font-family:ui-monospace,monospace; }
+    .res .profit { border-top:1px solid var(--border); margin-top:6px; padding-top:10px; font-size:1.05rem; }
+    .res .profit b { font-weight:800; }
+    .pos { color:var(--success); } .neg { color:var(--danger); }
+    .addbtn { margin-top:8px; }
+    table.cmp { width:100%; border-collapse:collapse; margin-top:8px; font-size:.9rem; }
+    table.cmp th, table.cmp td { padding:9px 8px; border-bottom:1px solid var(--border); text-align:right; }
+    table.cmp th:first-child, table.cmp td:first-child { text-align:left; }
+    table.cmp th { color:var(--text-muted); font-weight:600; font-size:.78rem; }
+    table.cmp td { font-family:ui-monospace,monospace; }
+    table.cmp tr.best td { background:var(--accent-soft); font-weight:700; }
+    .note { font-size:.82rem; color:var(--text-muted); background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-top:14px; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="../index.html"><span class="logo">🛠️</span><span>불편함 해결소<small>매일 쓰는 작은 도구 모음</small></span></a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="테마 전환">🌙</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="breadcrumb"><a href="../index.html">홈</a> › 게임 도구 › 비약 제작 순이익 계산기</div>
+    <div class="tool-head">
+      <h1>⚗️ 메이플 비약 제작 순이익 계산기</h1>
+      <p class="desc">재료비·판매가·경매장 수수료를 입력하면 피로도 기준 순이익을 계산합니다. 소재비 · 소형 고농축 경축비 · 고급 보킬비, 쥬니퍼베리 씨앗 오일 자작 이득 포함.</p>
+    </div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+
+    <div class="panel">
+      <div class="budget">
+        <label for="budget" style="font-weight:700;">피로도 예산</label>
+        <input type="text" inputmode="numeric" id="budget" class="mono comma" value="500" oninput="calcAll()" />
+        <label for="fee" style="font-weight:700; margin-left:8px;">경매장 수수료(%)</label>
+        <input type="number" id="fee" class="mono" min="0" max="100" step="0.1" value="5" oninput="calcAll();calcOil()" />
+      </div>
+      <div class="hint">피로도를 모두 제작에 쓴다고 가정합니다. 경매장 판매 수수료는 일반 5%, PC방·MVP 실버 이상은 3%입니다. (재료 구매에는 수수료가 붙지 않습니다.)</div>
+    </div>
+
+    <!-- 재료 가격 입력 (한 번만) -->
+    <div class="panel">
+      <h3 style="margin-top:0">재료 가격 (개당, 메소)</h3>
+      <p class="sub" style="font-size:.82rem; color:var(--text-muted); margin:0 0 12px;">각 재료의 개당 가격을 한 번만 입력하면 모든 비약에 자동 적용됩니다.</p>
+      <div id="matPrices" class="price-grid"></div>
+    </div>
+
+    <!-- 쥬니퍼베리 씨앗 오일 자작 계산 -->
+    <div class="panel">
+      <h3 style="margin-top:0">🌿 쥬니퍼베리 씨앗 오일 자작 이득</h3>
+      <p class="sub" style="font-size:.82rem; color:var(--text-muted); margin:0 0 14px;">씨앗 가격은 <b>상단의 ‘쥬니퍼베리 씨앗’</b>에서 가져오고, 아래 ‘오일 1개 시세’는 <b>상단 ‘쥬니퍼베리 씨앗 오일’ 가격과 양방향 연동</b>됩니다(한쪽에 입력하면 같이 채워짐). 자작 원가와 시세를 비교해 자작이 이득인지 보여줍니다.</p>
+      <div class="mini-row">
+        <div><label>오일 1개당 씨앗 수</label><input type="number" class="mono locked" id="oilSeeds" value="6" readonly tabindex="-1"></div>
+        <div><label>최고급 허브오일병 (고정)</label><input type="text" class="mono locked" id="oilHerb" value="1,000" readonly tabindex="-1"></div>
+        <div><label>오일 산출률(%)</label><input type="number" class="mono" id="oilYield" min="1" max="100" step="1" value="90" oninput="calcOil()"></div>
+        <div><label>오일 1개 시세(메소) · 상단과 연동</label><input type="text" inputmode="numeric" class="mono comma" id="oilMarket" placeholder="그냥 살 때 가격" oninput="oilMarketChanged()"></div>
+      </div>
+      <div class="res" id="oilRes" style="margin-top:14px;"></div>
+      <div class="hint">오일 1개에 씨앗 6개 + 최고급 허브오일병 1개(1000메소 고정)가 들어가며, 산출률 90% 기준 일부는 마법의 가루로 변환됩니다. 원가 = (씨앗가×6 + 허브오일병) ÷ 산출률. 제작에는 피로도도 소모됩니다.</div>
+    </div>
+
+    <div id="recipes"></div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+
+    <div class="panel">
+      <h3 style="margin-top:0">📊 비교 요약 (피로도 <span id="budgetEcho">500</span> 기준)</h3>
+      <table class="cmp">
+        <thead><tr><th>비약</th><th>제작 수</th><th>생산량</th><th>재료비</th><th>판매수익</th><th>순이익</th><th>피로도당</th></tr></thead>
+        <tbody id="cmpBody"></tbody>
+      </table>
+      <div class="hint">‘피로도당’은 순이익 ÷ 피로도 예산입니다. 값이 가장 큰 비약이 강조됩니다.</div>
+    </div>
+
+    <div class="note">
+      📌 <b>재료 가격은 상단 표에서 한 번만</b> 입력하면 여러 비약에 공통 적용됩니다(중복 입력 불필요). 세 비약의 재료·수량·산출 개수·피로도는 확정값으로 고정되어 있습니다. 산출은 소재비 6개·소경비 4개·고급 보킬비 2개, 피로도는 소재비·소경비 5, 고급 보킬비 10이며, 판매가만 비약별로 입력합니다.
+      자료 출처: <a href="https://livehepa.blogspot.com/2022/06/maple-secret-potion.html" target="_blank" rel="noopener">연금술 비약 재료 정리</a> · <a href="https://maple.begchi.com/%EC%86%8C%ED%98%95-%EC%9E%AC%ED%9A%8D%EB%B9%84-%EC%A0%9C%EC%9E%91-%EB%A0%88%EC%8B%9C%ED%94%BC-%EC%9E%AC%EB%A3%8C-%EC%A0%95%EB%B3%B4" target="_blank" rel="noopener">비공식센터</a>.
+    </div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+  </main>
+
+  <footer class="site-footer">
+    <nav><a href="../index.html">홈</a><a href="cube-calculator.html">큐브 계산기</a><a href="json-formatter.html">JSON</a><a href="timestamp.html">타임스탬프</a></nav>
+    <div>© 2026 불편함 해결소 · 모든 계산은 브라우저에서 처리됩니다.</div>
+  </footer>
+
+  <script src="../assets/app.js"></script>
+  <script>
+    // 레시피 프리필 (재료 수량·산출 개수는 공개 자료 기준, 피로도는 임시 기본값)
+    var RECIPES = [
+      {
+        id:'sojae', name:'소형 재물 획득의 비약', desc:'소재비 · 메소/드롭 +20%, 30분 · 1회 제작 6개 · 피로도 5',
+        out:6, fatigue:5,
+        mats:[
+          { name:'최고급 포션 빈 병', qty:1 },
+          { name:'쥬니퍼베리 씨앗 오일', qty:5 },
+          { name:'최상급 아이템 결정', qty:2 },
+          { name:'현자의 돌', qty:1 }
+        ]
+      },
+      {
+        id:'sogyeong', name:'소형 고농축 경험 축적의 비약', desc:'소경비/농쭉비 · 경험치 +20% · 1회 제작 4개 · 피로도 5',
+        out:4, fatigue:5,
+        mats:[
+          { name:'소형 경험 축적의 비약', qty:4 },
+          { name:'영롱한 황혼의 정수', qty:2 },
+          { name:'히솝 꽃 오일', qty:10 },
+          { name:'마력 결정', qty:1000 }
+        ]
+      },
+      {
+        id:'gobos', name:'고급 보스 킬러의 비약', desc:'고급 보킬비 · 명장 비약 · 1회 제작 2개 · 피로도 10',
+        out:2, fatigue:10,
+        mats:[
+          { name:'보스 킬러의 비약', qty:1 },
+          { name:'히솝 꽃 오일', qty:10 },
+          { name:'상급 주문의 정수', qty:1 },
+          { name:'영롱한 황혼의 정수', qty:1 }
+        ]
+      }
+    ];
+
+    function fmt(n){
+      var neg = n<0; n=Math.abs(n);
+      var s;
+      if(n>=1e8) s=(n/1e8).toFixed(2)+'억';
+      else if(n>=1e4) s=Math.round(n/1e4).toLocaleString('ko-KR')+'만';
+      else s=Math.round(n).toLocaleString('ko-KR');
+      return (neg?'-':'')+s;
+    }
+
+    // 쉼표 제거 후 숫자로 / id로 값 읽기
+    function stripNum(s){ return (s==null?'':String(s)).replace(/[^0-9.]/g,''); }
+    function gv(id){ var e=document.getElementById(id); return e ? (parseFloat(stripNum(e.value))||0) : 0; }
+    function withCommas(v){
+      var raw = stripNum(v);
+      if(raw==='') return '';
+      var n = parseFloat(raw); if(isNaN(n)) return '';
+      return Math.round(n).toLocaleString('ko-KR');
+    }
+    // class="comma" 입력칸은 입력 시 자동으로 천 단위 쉼표 표시
+    document.addEventListener('input', function(e){
+      var t = e.target;
+      if(t && t.classList && t.classList.contains('comma')) t.value = withCommas(t.value);
+    });
+
+    // 가격이 NPC 상점 등으로 고정된 재료 (잠금)
+    var FIXED_PRICES = { '최고급 포션 빈 병': 800 };
+    // 자작 원가로 자동 계산되는 재료 (직접 입력 불가)
+    var AUTO_PRICES = { '쥬니퍼베리 씨앗 오일': true };
+
+    // 모든 비약에서 쓰이는 고유 재료 목록 (순서 유지)
+    var MATERIALS = [];
+    (function(){
+      var seen = {};
+      RECIPES.forEach(function(r){ r.mats.forEach(function(m){
+        if(!seen[m.name]){ seen[m.name]=true; MATERIALS.push(m.name); }
+      }); });
+      // 쥬니퍼베리 씨앗(오일 재료)을 오일 바로 앞에 추가
+      var oilIdx = MATERIALS.indexOf('쥬니퍼베리 씨앗 오일');
+      if(oilIdx >= 0 && MATERIALS.indexOf('쥬니퍼베리 씨앗') < 0) {
+        MATERIALS.splice(oilIdx, 0, '쥬니퍼베리 씨앗');
+      }
+    })();
+    function matId(name){ return 'mp_'+MATERIALS.indexOf(name); }
+    function priceOf(name){ return gv(matId(name)); }
+
+    // 상단 재료 가격표 + 비약 카드 렌더링
+    function render(){
+      // 재료 가격 입력칸
+      document.getElementById('matPrices').innerHTML = MATERIALS.map(function(name){
+        var fixed = FIXED_PRICES.hasOwnProperty(name);
+        var tag = fixed ? ' (고정)' : (name==='쥬니퍼베리 씨앗 오일' ? ' (아래 시세와 연동)' : '');
+        var label = name + (tag ? ' <span style="color:var(--text-muted);font-weight:400;">'+tag+'</span>' : '');
+        var input;
+        if (fixed) {
+          input = '<input type="text" inputmode="numeric" class="mono locked" id="'+matId(name)+'" value="'+withCommas(FIXED_PRICES[name])+'" readonly tabindex="-1">';
+        } else {
+          var handler = (name === '쥬니퍼베리 씨앗 오일') ? 'oilTopChanged()'
+                      : (name === '쥬니퍼베리 씨앗') ? 'calcOil()'
+                      : 'calcAll()';
+          input = '<input type="text" inputmode="numeric" class="mono comma" id="'+matId(name)+'" placeholder="0" oninput="'+handler+'">';
+        }
+        return '<div class="price-item"><label for="'+matId(name)+'">'+label+'</label>'+input+'</div>';
+      }).join('');
+
+      // 비약 카드
+      var html = RECIPES.map(function(r){
+        var rows = r.mats.map(function(m,i){
+          return '<tr>'+
+            '<td><input type="text" value="'+m.name.replace(/"/g,'&quot;')+'" class="locked" readonly></td>'+
+            '<td><input type="number" class="num locked" value="'+m.qty+'" readonly tabindex="-1"></td>'+
+            '<td class="cost" id="mc_'+r.id+'_'+i+'"></td>'+
+          '</tr>';
+        }).join('');
+        return ''+
+        '<div class="panel recipe" data-id="'+r.id+'">'+
+          '<h3>'+r.name+'</h3>'+
+          '<p class="sub">'+r.desc+'</p>'+
+          '<table class="mat"><thead><tr>'+
+            '<th class="col-name">재료명</th><th class="col-qty">제작당 수량</th><th style="text-align:right">1제작 비용</th>'+
+          '</tr></thead><tbody>'+rows+'</tbody></table>'+
+          '<div class="mini-row">'+
+            '<div><label>제작 1회당 피로도</label><input type="number" class="mono locked" id="fat_'+r.id+'" value="'+r.fatigue+'" readonly tabindex="-1"></div>'+
+            '<div><label>제작 1회당 생산 개수</label><input type="number" class="mono locked" id="out_'+r.id+'" value="'+r.out+'" readonly tabindex="-1"></div>'+
+            '<div><label>판매가 / 개 (메소)</label><input type="text" inputmode="numeric" class="mono comma" id="sell_'+r.id+'" placeholder="경매장 시세" oninput="calcAll()"></div>'+
+          '</div>'+
+          '<div class="res" id="res_'+r.id+'"></div>'+
+        '</div>';
+      }).join('');
+      document.getElementById('recipes').innerHTML = html;
+    }
+
+    function calcAll(){
+      var budget = gv('budget');
+      var fee = gv('fee')/100;
+      if(fee<0) fee=0; if(fee>1) fee=1;
+      document.getElementById('budgetEcho').textContent = budget.toLocaleString('ko-KR');
+      var cmp = [];
+
+      RECIPES.forEach(function(r){
+        var matCostPerCraft = 0;
+        r.mats.forEach(function(m,i){
+          var c = m.qty * priceOf(m.name);
+          matCostPerCraft += c;
+          var cell = document.getElementById('mc_'+r.id+'_'+i);
+          if(cell) cell.textContent = c>0 ? fmt(c) : '';
+        });
+
+        var fat = gv('fat_'+r.id);
+        var out = gv('out_'+r.id);
+        var sell = gv('sell_'+r.id);
+
+        var resEl = document.getElementById('res_'+r.id);
+        if(fat<=0 || budget<=0){
+          resEl.innerHTML = '<div class="line">제작 1회당 피로도와 피로도 예산을 입력하세요.</div>';
+          cmp.push({name:r.name, crafts:0, produced:0, cost:0, rev:0, profit:null, per:null});
+          return;
+        }
+        var crafts = Math.floor(budget/fat);
+        var produced = crafts*out;
+        var totalCost = crafts*matCostPerCraft;
+        var grossRevenue = produced*sell;
+        var revenue = grossRevenue*(1-fee);   // 경매장 수수료 차감
+        var profit = revenue-totalCost;
+        var perFat = budget>0 ? profit/budget : 0;
+
+        resEl.innerHTML =
+          '<div class="line"><span>제작 횟수</span><b>'+crafts.toLocaleString('ko-KR')+'회</b></div>'+
+          '<div class="line"><span>총 생산량</span><b>'+produced.toLocaleString('ko-KR')+'개</b></div>'+
+          '<div class="line"><span>총 재료비</span><b>'+fmt(totalCost)+'</b></div>'+
+          '<div class="line"><span>판매수익(수수료 '+(fee*100).toFixed(1)+'% 차감)</span><b>'+fmt(revenue)+'</b></div>'+
+          '<div class="line profit"><span>순이익</span><b class="'+(profit>=0?'pos':'neg')+'">'+fmt(profit)+' 메소</b></div>'+
+          '<div class="line"><span>피로도당 순이익</span><b class="'+(perFat>=0?'pos':'neg')+'">'+fmt(perFat)+'</b></div>';
+
+        cmp.push({name:r.name, crafts:crafts, produced:produced, cost:totalCost, rev:revenue, profit:profit, per:perFat});
+      });
+
+      // 비교표
+      var best = -Infinity;
+      cmp.forEach(function(c){ if(c.profit!==null && c.per>best) best=c.per; });
+      document.getElementById('cmpBody').innerHTML = cmp.map(function(c){
+        if(c.profit===null) return '<tr><td>'+c.name+'</td><td colspan="6">입력 필요</td></tr>';
+        var isBest = (c.per===best && best>-Infinity);
+        return '<tr'+(isBest?' class="best"':'')+'>'+
+          '<td>'+c.name+'</td>'+
+          '<td>'+c.crafts.toLocaleString('ko-KR')+'</td>'+
+          '<td>'+c.produced.toLocaleString('ko-KR')+'</td>'+
+          '<td>'+fmt(c.cost)+'</td>'+
+          '<td>'+fmt(c.rev)+'</td>'+
+          '<td class="'+(c.profit>=0?'pos':'neg')+'">'+fmt(c.profit)+'</td>'+
+          '<td class="'+(c.per>=0?'pos':'neg')+'">'+fmt(c.per)+'</td>'+
+        '</tr>';
+      }).join('');
+    }
+
+    // 쥬니퍼베리 씨앗 오일 자작 계산
+    function calcOil(){
+      var seed = priceOf('쥬니퍼베리 씨앗');   // 상단 가격표에서 가져옴
+      var seedsPerOil = gv('oilSeeds');
+      var yieldRate = gv('oilYield')/100;
+      var market = gv('oilMarket');
+      var el = document.getElementById('oilRes');
+      if(seed<=0 || seedsPerOil<=0 || yieldRate<=0){
+        el.innerHTML = '<div class="line">상단 가격표에서 쥬니퍼베리 씨앗 가격을 입력하세요.</div>';
+        return;
+      }
+      if(yieldRate>1) yieldRate=1;
+      var herb = gv('oilHerb');  // 최고급 허브오일병(고정 1000)
+      var fee = gv('fee')/100;
+      if(fee<0) fee=0; if(fee>1) fee=1;
+      var effSeeds = seedsPerOil/yieldRate;       // 산출률 반영 평균 씨앗 수
+      var unit = (seed*seedsPerOil + herb)/yieldRate;  // 자작 오일 1개 원가 (씨앗 + 허브오일병, 산출률 반영)
+      var html =
+        '<div class="line"><span>오일 1개당 평균 씨앗 (산출률 '+(yieldRate*100).toFixed(0)+'%)</span><b>'+effSeeds.toFixed(2)+'개</b></div>'+
+        '<div class="line"><span>자작 시 오일 1개 원가 (씨앗+허브오일병)</span><b>'+fmt(unit)+' 메소</b></div>';
+      if(market>0){
+        var net = market*(1-fee);                 // 판매 시 수령액(수수료 차감)
+        var sellProfit = net - unit;              // 오일 만들어 팔았을 때 1개당 순이익
+        var useSave = market - unit;              // 자작해서 직접 쓸 때 1개당 절감액(구매가 대비)
+        html += '<div class="line"><span>오일 시세</span><b>'+fmt(market)+' 메소</b></div>'+
+          '<div class="line"><span>판매 시 수령액 (수수료 '+(fee*100).toFixed(1)+'% 차감)</span><b>'+fmt(net)+' 메소</b></div>'+
+          '<div class="line profit"><span>① 만들어 팔 때 1개당 순이익</span><b class="'+(sellProfit>=0?'pos':'neg')+'">'+fmt(sellProfit)+' 메소</b></div>'+
+          '<div class="line"><span>② 직접 쓸 때 1개당 절감액 (구매가 대비)</span><b class="'+(useSave>=0?'pos':'neg')+'">'+fmt(useSave)+' 메소</b></div>';
+      }
+      el.innerHTML = html;
+    }
+
+    // 상단 '쥬니퍼베리 씨앗 오일' 가격 ↔ 하단 '오일 1개 시세' 양방향 연동
+    function oilTopChanged(){
+      var top = document.getElementById(matId('쥬니퍼베리 씨앗 오일'));
+      var bot = document.getElementById('oilMarket');
+      var f = withCommas(top.value); top.value = f; if(bot) bot.value = f;
+      calcOil(); calcAll();
+    }
+    function oilMarketChanged(){
+      var top = document.getElementById(matId('쥬니퍼베리 씨앗 오일'));
+      var bot = document.getElementById('oilMarket');
+      var f = withCommas(bot.value); bot.value = f; if(top) top.value = f;
+      calcOil(); calcAll();
+    }
+
+    render();
+    calcOil();
+  </script>
+</body>
+</html>

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>메이플스토리 큐브 옵션 기댓값 계산기 — 불편함 해결소</title>
+  <meta name="description" content="메이플스토리 잠재능력 큐브(블랙/골드/실버) 옵션 기댓값 계산기. 부위·레벨·큐브를 고르고 원하는 옵션 3줄을 선택하면 넥슨 공식 확률로 성공 확률·기대 재설정 횟수·예상 메소·확신도 그래프를 보여줍니다." />
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>" />
+  <link rel="stylesheet" href="../assets/style.css" />
+  <!-- 애드센스 승인 후 아래 주석 해제 + 게시자 ID 교체
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  -->
+  <style>
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media(max-width:520px){ .row2 { grid-template-columns:1fr; } }
+    .line-row { display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:center; margin-bottom:10px; }
+    .line-row .tagn { font-size:.85rem; font-weight:700; color:var(--text-muted); white-space:nowrap; }
+    .hint { font-size:.82rem; color:var(--text-muted); margin-top:6px; }
+    .pwrap { text-align:center; background:var(--accent-soft); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:18px; }
+    .pwrap span { display:block; font-size:.82rem; color:var(--text-muted); }
+    .pwrap b { font-size:1.6rem; font-weight:800; color:var(--accent); }
+    .big-out { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-top:6px; }
+    .big-out .o { background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+    .big-out .o span { display:block; font-size:.78rem; color:var(--text-muted); margin-bottom:6px; }
+    .big-out .o b { font-size:1.35rem; font-weight:800; letter-spacing:-.02em; }
+    .big-out .o small { display:block; color:var(--text-muted); font-size:.75rem; margin-top:4px; }
+    table.conf { width:100%; border-collapse:collapse; margin-top:8px; font-size:.92rem; }
+    table.conf th, table.conf td { padding:9px 10px; border-bottom:1px solid var(--border); text-align:left; }
+    table.conf th { color:var(--text-muted); font-weight:600; font-size:.82rem; }
+    table.conf td.num { font-family:ui-monospace,monospace; text-align:right; }
+    .calc-btn { width:100%; font-size:1.05rem; padding:14px; margin-bottom:4px; }
+    #resultBox { display:none; }
+    .chart-wrap { position:relative; margin-top:18px; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:14px; }
+    .chart-wrap h4 { margin:0 0 4px; }
+    #confChart { width:100%; height:280px; display:block; cursor:crosshair; }
+    #chartTip { position:absolute; pointer-events:none; display:none; z-index:5; white-space:nowrap;
+      background:var(--surface); border:1px solid var(--accent); border-radius:8px; padding:8px 10px;
+      font-size:.8rem; line-height:1.5; box-shadow:var(--shadow); }
+    #chartTip b { color:var(--accent); }
+    .note { font-size:.82rem; color:var(--text-muted); background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-top:14px; }
+    .warn { color:var(--danger); font-weight:600; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="../index.html"><span class="logo">🛠️</span><span>불편함 해결소<small>매일 쓰는 작은 도구 모음</small></span></a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="테마 전환">🌙</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="breadcrumb"><a href="../index.html">홈</a> › 게임 도구 › 큐브 기댓값 계산기</div>
+    <div class="tool-head">
+      <h1>🎲 메이플스토리 큐브 옵션 기댓값 계산기</h1>
+      <p class="desc">큐브·부위·레벨과 <b>기존 등급 → 목표 등급</b>을 고른 뒤 <b>계산하기</b>를 누르면 등급 상승(등업) 총 기댓값과, 레전드리 옵션 조합 성공 확률·기대 재설정·예상 메소·확신도 그래프를 보여줍니다. (넥슨 공식 확률, 천장 반영)</p>
+    </div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+
+    <!-- ===== 1. 큐브 · 부위 · 레벨 ===== -->
+    <div class="panel">
+      <h3 style="margin-top:0">① 큐브 · 부위 · 레벨</h3>
+      <div class="row2">
+        <div class="field" style="margin:0">
+          <label for="cubeSel">큐브 종류</label>
+          <select id="cubeSel" onchange="onCubeChange()">
+            <option value="black">블랙 큐브 (메소 잠재능력 재설정)</option>
+            <option value="gold">골드 큐브 (명장의 큐브)</option>
+            <option value="silver">실버 큐브 (장인의 큐브)</option>
+          </select>
+        </div>
+        <div class="field" style="margin:0">
+          <label for="partSel">부위</label>
+          <select id="partSel" onchange="rebuildLines(false)">
+            <option value="weapon">무기 · 보조무기 · 엠블렘 (공격 계열)</option>
+            <option value="glove">장갑 (크리티컬 데미지 계열)</option>
+            <option value="hat">모자 (재사용 대기시간 감소 계열)</option>
+            <option value="armor">방어구 (상의·하의·신발·망토·한벌옷)</option>
+            <option value="accessory">장신구 (반지·펜던트·귀고리·얼굴·눈장식)</option>
+          </select>
+        </div>
+        <div class="field" style="margin:0">
+          <label for="itemLevel">장비 레벨 구간</label>
+          <select id="itemLevel" onchange="rebuildLines(true)">
+            <option value="b1">레벨 1~159</option>
+            <option value="b2">레벨 160~199 (앱솔랩스 등)</option>
+            <option value="b3" selected>레벨 200 (아케인셰이드·제네시스·보스 장신구)</option>
+            <option value="b5">레벨 250 (에테르넬·데스티니)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2" style="margin-top:14px">
+        <div class="field" style="margin:0">
+          <label for="gradeCur">기존(현재) 등급</label>
+          <select id="gradeCur" onchange="onGradeChange()">
+            <option value="rare">레어</option>
+            <option value="epic">에픽</option>
+            <option value="unique" selected>유니크</option>
+            <option value="legendary">레전드리</option>
+          </select>
+        </div>
+        <div class="field" style="margin:0">
+          <label for="gradeTgt">목표 등급</label>
+          <select id="gradeTgt" onchange="onGradeChange()">
+            <option value="rare">레어</option>
+            <option value="epic">에픽</option>
+            <option value="unique">유니크</option>
+            <option value="legendary" selected>레전드리</option>
+          </select>
+        </div>
+      </div>
+      <label style="display:flex; align-items:center; gap:8px; margin-top:12px; cursor:pointer; font-size:.92rem; font-weight:600;">
+        <input type="checkbox" id="miracleChk" onchange="onMiracleChange()" style="width:auto; cursor:pointer;" />
+        ✨ 미라클 타임 (등급 상승 확률 2배)
+      </label>
+      <div class="hint" id="bracketHint"></div>
+    </div>
+
+    <!-- ===== 2. 옵션 선택 (레전드리 전용) ===== -->
+    <div class="panel" id="optPanel">
+      <h3 style="margin-top:0">② 원하는 레전드리 옵션 (최대 3줄)</h3>
+      <div class="line-row"><span class="tagn">1줄</span><select id="opt0"></select></div>
+      <div class="line-row"><span class="tagn">2줄</span><select id="opt1"></select></div>
+      <div class="line-row"><span class="tagn">3줄</span><select id="opt2"></select></div>
+      <div class="hint">원하는 옵션 3개를 고르세요(순서 무관). 크리티컬 데미지·재사용 대기시간 감소·메소 획득량·아이템 드롭률 등은 <b>1줄에서 잘 뜨고</b>, 2·3줄에는 이탈로만 뜹니다(블랙 큐브가 이탈 확률이 높음). ‘지정 안 함’은 그 줄을 아무 옵션이나 허용합니다.</div>
+    </div>
+
+    <!-- ===== 3. 비용 ===== -->
+    <div class="panel">
+      <h3 style="margin-top:0">③ 재설정 1회 비용 (메소 · 고정)</h3>
+      <div class="field" style="margin:0">
+        <label for="costMeso">현재 등급 재설정 1회 비용</label>
+        <input type="text" id="costMeso" class="mono" readonly tabindex="-1" style="background:var(--surface-2); color:var(--text-muted); border-style:dashed; cursor:default;" />
+      </div>
+      <div class="hint" id="mesoHint"></div>
+    </div>
+
+    <!-- ===== 4. 결과 ===== -->
+    <div class="panel">
+      <h3 style="margin-top:0">④ 결과</h3>
+      <button class="btn primary calc-btn" onclick="runCalc()">계산하기</button>
+      <div id="errMsg" class="msg err"></div>
+
+      <div id="resultBox">
+        <!-- 등급 상승(등업) -->
+        <h4 style="margin:8px 0 6px">📈 등급 상승(등업) 확률 · 기댓값</h4>
+        <div class="hint" style="margin:0 0 8px" id="gradeUpDesc"></div>
+        <table class="conf">
+          <thead><tr><th>등급 상승</th><th style="text-align:right">1회 확률</th><th style="text-align:right">평균 재설정 수</th><th style="text-align:right">예상 메소</th></tr></thead>
+          <tbody id="gradeUpBody"></tbody>
+        </table>
+
+        <!-- 옵션 조합 결과 (레전드리) -->
+        <div id="optResult">
+          <div class="pwrap" style="margin-top:22px">
+            <span>1회 재설정으로 이 옵션 조합이 나올 확률</span>
+            <b id="rP">—</b>
+          </div>
+          <div class="big-out">
+            <div class="o"><span>기댓값 (평균)</span><b id="rExpect">—</b><small>회 재설정</small></div>
+            <div class="o"><span>옵션 재설정 예상 메소</span><b id="rMeso">—</b><small>옵션만, 기댓값 기준</small></div>
+          </div>
+          <div class="pwrap" style="margin-top:14px">
+            <span id="rGrandLabel">총 기대 비용 (등업 + 옵션 재설정)</span>
+            <b id="rGrand">—</b>
+          </div>
+
+          <div class="chart-wrap">
+            <h4>성공 확신도 → 필요 재설정 횟수</h4>
+            <div class="hint" style="margin:0 0 8px">막대(5% 간격)에 마우스를 올리면 확신도·필요 재설정 수·예상 메소가 표시됩니다. <span style="color:#b8760a;font-weight:600">주황 점선</span> = 기댓값(평균 재설정 횟수, 약 63% 확신도 지점).</div>
+            <canvas id="confChart"></canvas>
+            <div id="chartTip"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      📌 확률은 <b>넥슨 공식 확률표(레전드리)</b>를 브라우저로 직접 수집한 값입니다. 큐브마다 옵션 확률과 <b>이탈</b>(2·3줄에 상위 옵션이 뜰 확률)이 달라, 블랙 큐브는 2줄 20%·3줄 5%로 이탈이 크고 골드(명장)는 매우 낮습니다. 첫 줄·2줄·3줄을 각각 구분해 순서 무관 조합 확률을 계산하며, 등급은 이미 레전드리라고 보고 옵션 재설정만 계산합니다(평균 = 1/p). 레벨 <b>120~200</b>과 <b>201~250</b>은 확률 가중치는 같고 옵션 수치만 다릅니다.
+      <br>💰 비용은 <b>메소 잠재능력 재설정</b>(블랙 큐브와 동일 기능) 기준이며 레전드리 재설정 1회 비용은 레벨 250+ 5,000만 · 200~249 4,500만 · 160~199 4,250만 · 159 이하 4,000만 메소입니다(자동 입력, 직접 수정 가능). 골드·실버 큐브는 콘텐츠·이벤트로 얻는 아이템이라 비용은 참고용입니다.
+      <br>✨ <b>미라클 타임</b>은 <b>등급 상승 확률만 2배</b>가 되는 이벤트입니다. 레전드리 옵션 재설정(옵션이 뜰 확률)에는 영향을 주지 않으므로, 체크해도 위쪽 옵션 조합 확률은 그대로입니다.
+      <br>공식 페이지: <a href="https://maplestory.nexon.com/Guide/OtherProbability/cube/black" target="_blank" rel="noopener">블랙 큐브</a> · <a href="https://maplestory.nexon.com/Guide/OtherProbability/cube/artisan" target="_blank" rel="noopener">명장의 큐브</a> · <a href="https://maplestory.nexon.com/Guide/OtherProbability/cube/master" target="_blank" rel="noopener">장인의 큐브</a>
+    </div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+  </main>
+
+  <footer class="site-footer">
+    <nav><a href="../index.html">홈</a><a href="potion-calculator.html">비약 계산기</a><a href="json-formatter.html">JSON</a><a href="timestamp.html">타임스탬프</a></nav>
+    <div>© 2026 불편함 해결소 · 모든 계산은 브라우저에서 처리됩니다. 확률 데이터 출처: 넥슨 메이플스토리 공식 가이드.</div>
+  </footer>
+
+  <script src="../assets/app.js"></script>
+  <script>
+    // ===== 넥슨 공식 확률(레전드리) =====
+    // 각 옵션: n1=레벨120~200 수치, n2=레벨201~250 수치, l1=첫 줄%, l2=둘째 줄%.
+    // 셋째 줄 l3은 큐브별로 도출: 골드 → l2와 동일 / 블랙 → 1.1875·l2 − 0.1875·l1 (이탈 20%/5% 구조).
+    var OPTION_DATA = {
+      gold: {
+        weapon: [
+          {n1:'보스 몬스터 데미지 +40%',n2:'보스 몬스터 데미지 +45%',l1:2.7778,l2:0},
+          {n1:'보스 몬스터 데미지 +35%',n2:'보스 몬스터 데미지 +40%',l1:11.1111,l2:0},
+          {n1:'보스 몬스터 데미지 +30%',n2:'보스 몬스터 데미지 +35%',l1:0,l2:6.6534},
+          {n1:'데미지 +12%',n2:'데미지 +13%',l1:5.5556,l2:0},
+          {n1:'데미지 +9%',n2:'데미지 +10%',l1:0,l2:6.6534},
+          {n1:'공격력/마력 +12%',n2:'공격력/마력 +13%',l1:5.5556,l2:0},
+          {n1:'공격력/마력 +9%',n2:'공격력/마력 +10%',l1:0,l2:6.6534},
+          {n1:'크리티컬 확률 +12%',n2:'크리티컬 확률 +13%',l1:5.5556,l2:0},
+          {n1:'크리티컬 확률 +9%',n2:'크리티컬 확률 +10%',l1:0,l2:6.6534},
+          {n1:'몬스터 방어율 무시 +40%',n2:'몬스터 방어율 무시 +45%',l1:2.7778,l2:0},
+          {n1:'몬스터 방어율 무시 +35%',n2:'몬스터 방어율 무시 +40%',l1:5.5556,l2:0},
+          {n1:'몬스터 방어율 무시 +30%',n2:'몬스터 방어율 무시 +35%',l1:0,l2:6.6534},
+          {n1:'주력 스탯(STR/DEX/INT/LUK) +12%',n2:'주력 스탯 +13%',l1:11.1111,l2:0},
+          {n1:'주력 스탯 +9%',n2:'주력 스탯 +10%',l1:0,l2:13.3067},
+          {n1:'올스탯 +9%',n2:'올스탯 +10%',l1:11.1111,l2:0},
+          {n1:'올스탯 +6%',n2:'올스탯 +7%',l1:0,l2:6.6534}
+        ],
+        glove: [
+          {n1:'크리티컬 데미지 +8%',n2:'크리티컬 데미지 +8%',l1:9.7561,l2:0},
+          {n1:'주력 스탯(STR/DEX/INT/LUK) +12%',n2:'주력 스탯 +13%',l1:4.8780,l2:0},
+          {n1:'주력 스탯 +9%',n2:'주력 스탯 +10%',l1:0,l2:6.2375},
+          {n1:'올스탯 +9%',n2:'올스탯 +10%',l1:4.8780,l2:0},
+          {n1:'올스탯 +6%',n2:'올스탯 +7%',l1:0,l2:3.1188},
+          {n1:'최대 HP +12%',n2:'최대 HP +13%',l1:7.3171,l2:0},
+          {n1:'최대 HP +9%',n2:'최대 HP +10%',l1:0,l2:9.3563}
+        ],
+        hat: [
+          {n1:'모든 스킬 재사용 대기시간 -2초',n2:'모든 스킬 재사용 대기시간 -2초',l1:6.0606,l2:0},
+          {n1:'모든 스킬 재사용 대기시간 -1초',n2:'모든 스킬 재사용 대기시간 -1초',l1:9.0909,l2:0},
+          {n1:'주력 스탯(STR/DEX/INT/LUK) +12%',n2:'주력 스탯 +13%',l1:6.0606,l2:0},
+          {n1:'주력 스탯 +9%',n2:'주력 스탯 +10%',l1:0,l2:7.6770},
+          {n1:'올스탯 +9%',n2:'올스탯 +10%',l1:6.0606,l2:0},
+          {n1:'올스탯 +6%',n2:'올스탯 +7%',l1:0,l2:3.8385},
+          {n1:'최대 HP +12%',n2:'최대 HP +13%',l1:9.0909,l2:0},
+          {n1:'최대 HP +9%',n2:'최대 HP +10%',l1:0,l2:11.5154}
+        ],
+        armor: [
+          {n1:'주력 스탯(STR/DEX/INT/LUK) +12%',n2:'주력 스탯 +13%',l1:6.4516,l2:0},
+          {n1:'주력 스탯 +9%',n2:'주력 스탯 +10%',l1:0,l2:6.6534},
+          {n1:'올스탯 +9%',n2:'올스탯 +10%',l1:6.4516,l2:0},
+          {n1:'올스탯 +6%',n2:'올스탯 +7%',l1:0,l2:3.3267},
+          {n1:'최대 HP +12%',n2:'최대 HP +13%',l1:9.6774,l2:0},
+          {n1:'최대 HP +9%',n2:'최대 HP +10%',l1:0,l2:9.98}
+        ],
+        accessory: [
+          {n1:'메소 획득량 +20%',n2:'메소 획득량 +20%',l1:9.6774,l2:0},
+          {n1:'아이템 드롭률 +20%',n2:'아이템 드롭률 +20%',l1:9.6774,l2:0},
+          {n1:'주력 스탯(STR/DEX/INT/LUK) +12%',n2:'주력 스탯 +13%',l1:6.4516,l2:0},
+          {n1:'주력 스탯 +9%',n2:'주력 스탯 +10%',l1:0,l2:11.0889},
+          {n1:'올스탯 +9%',n2:'올스탯 +10%',l1:6.4516,l2:0},
+          {n1:'올스탯 +6%',n2:'올스탯 +7%',l1:0,l2:5.5445},
+          {n1:'최대 HP +12%',n2:'최대 HP +13%',l1:9.6774,l2:0},
+          {n1:'최대 HP +9%',n2:'최대 HP +10%',l1:0,l2:16.6334}
+        ]
+      },
+      black: {
+        weapon: [
+          {n1:'보스 몬스터 데미지 +40%',n2:'보스 몬스터 데미지 +45%',l1:4.8780,l2:0.9756},
+          {n1:'보스 몬스터 데미지 +35%',n2:'보스 몬스터 데미지 +40%',l1:9.7561,l2:1.9512},
+          {n1:'보스 몬스터 데미지 +30%',n2:'보스 몬스터 데미지 +35%',l1:0,l2:5.5814},
+          {n1:'데미지 +12%',n2:'데미지 +13%',l1:4.8780,l2:0.9756},
+          {n1:'데미지 +9%',n2:'데미지 +10%',l1:0,l2:5.5814},
+          {n1:'공격력/마력 +12%',n2:'공격력/마력 +13%',l1:4.8780,l2:0.9756},
+          {n1:'공격력/마력 +9%',n2:'공격력/마력 +10%',l1:0,l2:5.5814},
+          {n1:'크리티컬 확률 +12%',n2:'크리티컬 확률 +13%',l1:4.8780,l2:0.9756},
+          {n1:'크리티컬 확률 +9%',n2:'크리티컬 확률 +10%',l1:0,l2:7.4419},
+          {n1:'몬스터 방어율 무시 +40%',n2:'몬스터 방어율 무시 +45%',l1:4.8780,l2:0.9756},
+          {n1:'몬스터 방어율 무시 +35%',n2:'몬스터 방어율 무시 +40%',l1:4.8780,l2:0.9756},
+          {n1:'몬스터 방어율 무시 +30%',n2:'몬스터 방어율 무시 +35%',l1:0,l2:5.5814},
+          {n1:'주력 스탯(STR/DEX/INT/LUK) +12%',n2:'주력 스탯 +13%',l1:9.7561,l2:1.9512},
+          {n1:'주력 스탯 +9%',n2:'주력 스탯 +10%',l1:0,l2:9.3023},
+          {n1:'올스탯 +9%',n2:'올스탯 +10%',l1:7.3171,l2:1.4634},
+          {n1:'올스탯 +6%',n2:'올스탯 +7%',l1:0,l2:7.4419}
+        ],
+        glove: [
+          {n1:'크리티컬 데미지 +8%',n2:'크리티컬 데미지 +8%',l1:10,l2:2.0},
+          {n1:'주력 스탯(STR/DEX/INT/LUK) +12%',n2:'주력 스탯 +13%',l1:10,l2:2.0},
+          {n1:'주력 스탯 +9%',n2:'주력 스탯 +10%',l1:0,l2:7.1429},
+          {n1:'올스탯 +9%',n2:'올스탯 +10%',l1:7.5,l2:1.5},
+          {n1:'올스탯 +6%',n2:'올스탯 +7%',l1:0,l2:5.7143},
+          {n1:'최대 HP +12%',n2:'최대 HP +13%',l1:10,l2:2.0},
+          {n1:'최대 HP +9%',n2:'최대 HP +10%',l1:0,l2:8.5714}
+        ],
+        hat: [
+          {n1:'모든 스킬 재사용 대기시간 -2초',n2:'모든 스킬 재사용 대기시간 -2초',l1:4.8780,l2:0.9756},
+          {n1:'모든 스킬 재사용 대기시간 -1초',n2:'모든 스킬 재사용 대기시간 -1초',l1:7.3171,l2:1.4634},
+          {n1:'주력 스탯(STR/DEX/INT/LUK) +12%',n2:'주력 스탯 +13%',l1:9.7561,l2:1.9512},
+          {n1:'주력 스탯 +9%',n2:'주력 스탯 +10%',l1:0,l2:7.6923},
+          {n1:'올스탯 +9%',n2:'올스탯 +10%',l1:7.3171,l2:1.4634},
+          {n1:'올스탯 +6%',n2:'올스탯 +7%',l1:0,l2:6.1538},
+          {n1:'최대 HP +12%',n2:'최대 HP +13%',l1:9.7561,l2:1.9512},
+          {n1:'최대 HP +9%',n2:'최대 HP +10%',l1:0,l2:9.2308}
+        ],
+        armor: [
+          {n1:'주력 스탯(STR/DEX/INT/LUK) +12%',n2:'주력 스탯 +13%',l1:10.2564,l2:2.05128},
+          {n1:'주력 스탯 +9%',n2:'주력 스탯 +10%',l1:0,l2:6.4516},
+          {n1:'올스탯 +9%',n2:'올스탯 +10%',l1:7.6923,l2:1.5385},
+          {n1:'올스탯 +6%',n2:'올스탯 +7%',l1:0,l2:5.1613},
+          {n1:'최대 HP +12%',n2:'최대 HP +13%',l1:10.2564,l2:2.05128},
+          {n1:'최대 HP +9%',n2:'최대 HP +10%',l1:0,l2:7.7419}
+        ],
+        accessory: [
+          {n1:'메소 획득량 +20%',n2:'메소 획득량 +20%',l1:7.6923,l2:1.5385},
+          {n1:'아이템 드롭률 +20%',n2:'아이템 드롭률 +20%',l1:7.6923,l2:1.5385},
+          {n1:'주력 스탯(STR/DEX/INT/LUK) +12%',n2:'주력 스탯 +13%',l1:10.2564,l2:2.05128},
+          {n1:'주력 스탯 +9%',n2:'주력 스탯 +10%',l1:0,l2:10},
+          {n1:'올스탯 +9%',n2:'올스탯 +10%',l1:7.6923,l2:1.5385},
+          {n1:'올스탯 +6%',n2:'올스탯 +7%',l1:0,l2:8.0},
+          {n1:'최대 HP +12%',n2:'최대 HP +13%',l1:10.2564,l2:2.05128},
+          {n1:'최대 HP +9%',n2:'최대 HP +10%',l1:0,l2:12}
+        ]
+      }
+    };
+
+    // 셋째 줄 확률 도출
+    function l3Of(cube, o){
+      if(cube==='gold') return o.l2;
+      // black: 1.1875·l2 − 0.1875·l1 (음수 방지)
+      var v = 1.1875*o.l2 - 0.1875*o.l1;
+      return v>0 ? v : 0;
+    }
+
+    // 레벨 구간 (prob: 옵션 수치 구간, cb: 비용 구간 키, label)
+    var LEVEL_BANDS = {
+      b1:{prob:1,cb:'c1',label:'1~159'},
+      b2:{prob:1,cb:'c2',label:'160~199'},
+      b3:{prob:1,cb:'c3',label:'200'},
+      b4:{prob:2,cb:'c3',label:'201~249'},
+      b5:{prob:2,cb:'c4',label:'250~300'}
+    };
+    // 잠재능력 재설정(메소) 1회 비용 — 비용구간 × 등급 (넥슨 공식)
+    var COST_TABLE = {
+      c1:{ rare:4000000,  epic:16000000, unique:34000000, legendary:40000000 }, // 1~159
+      c2:{ rare:4250000,  epic:17000000, unique:36125000, legendary:42500000 }, // 160~199
+      c3:{ rare:4500000,  epic:18000000, unique:38250000, legendary:45000000 }, // 200~249
+      c4:{ rare:5000000,  epic:20000000, unique:42500000, legendary:50000000 }  // 250~300
+    };
+    // 등급 상승 확률 — 큐브별 (레어→에픽, 에픽→유니크, 유니크→레전드리)
+    var GRADE_UP = {
+      black:  { re:0.15,      eu:0.035,     ul:0.014 },
+      gold:   { re:0.079994,  eu:0.016959,  ul:0.001996 },
+      silver: { re:0.047619,  eu:0.011858,  ul:null } // 장인의 큐브: 유니크까지만
+    };
+    // 확정 등급 상승(천장): 해당 개수 안에 반드시 등업. 블랙 큐브(메소 재설정)만 존재, 골드·실버는 없음.
+    var CEIL_UP = {
+      black:  { re:10, eu:42, ul:107 }
+    };
+    var GRADE_LABEL = { rare:'레어', epic:'에픽', unique:'유니크', legendary:'레전드리' };
+    var GRADE_LIST = ['rare','epic','unique','legendary'];
+    function gradeIdx(g){ return GRADE_LIST.indexOf(g); }
+
+    function currentBand(){ return LEVEL_BANDS[document.getElementById('itemLevel').value] || LEVEL_BANDS.b3; }
+    function levelBracket(){ return currentBand().prob; }
+    function curCube(){ return document.getElementById('cubeSel').value; }
+    function curGrade(){ return document.getElementById('gradeCur').value; } // 기존(현재) 등급
+    function tgtGrade(){ return document.getElementById('gradeTgt').value; } // 목표 등급
+    function optName(o){ return levelBracket()===2 ? o.n2 : o.n1; }
+    function curOpts(){ var c=curCube(); return (OPTION_DATA[c]||OPTION_DATA.black)[document.getElementById('partSel').value]; }
+    function costOf(grade){ return COST_TABLE[currentBand().cb][grade]; }
+
+    function onCubeChange(){ document.getElementById('resultBox').style.display='none'; syncGradeUI(); rebuildLines(true); }
+    function onGradeChange(){ document.getElementById('resultBox').style.display='none'; syncGradeUI(); autofillMeso(); }
+
+    // 목표 등급이 레전드리일 때만 옵션 조합 패널 노출
+    function syncGradeUI(){
+      var op = document.getElementById('optPanel');
+      if(op) op.style.display = (tgtGrade()==='legendary') ? 'block' : 'none';
+    }
+
+    function updateBracketHint(){
+      var el = document.getElementById('bracketHint');
+      var probBand = levelBracket()===2 ? '201~250' : '120~200';
+      var cubeLabel = {black:'블랙 큐브(메소 재설정)', gold:'골드 큐브(명장)', silver:'실버 큐브(장인)'}[curCube()];
+      el.textContent = cubeLabel + ' · ' + GRADE_LABEL[curGrade()] + ' → ' + GRADE_LABEL[tgtGrade()] + ' · 옵션 수치 구간 ' + probBand;
+      autofillMeso();
+    }
+    // 옵션 재설정 비용은 목표(레전드리) 등급 기준
+    function resetMesoCost(){ return costOf(tgtGrade()); }
+    function autofillMeso(){
+      var el = document.getElementById('costMeso');
+      if(el) el.value = resetMesoCost().toLocaleString('ko-KR');
+      var mh = document.getElementById('mesoHint');
+      if(mh) mh.textContent = '옵션 재설정 비용은 '+GRADE_LABEL[tgtGrade()]+' 등급 기준 — 레벨 '+currentBand().label+' 구간 1회 '+resetMesoCost().toLocaleString('ko-KR')+' 메소 (고정). 등업 비용은 아래 표에서 등급별로 자동 반영됩니다.';
+    }
+
+    // 드롭다운 채우기. keepSel=true면 현재 선택 유지
+    function rebuildLines(keepSel){
+      var silver = curCube()==='silver';
+      var prev = keepSel ? [0,1,2].map(function(k){ return document.getElementById('opt'+k).value; }) : null;
+      if(silver){
+        for(var k=0;k<3;k++) document.getElementById('opt'+k).innerHTML='<option value="-1">— 지정 안 함 —</option>';
+        updateBracketHint();
+        return;
+      }
+      var opts = curOpts();
+      var html = '<option value="-1">— 지정 안 함 —</option>' +
+        opts.map(function(o,i){ return '<option value="'+i+'">'+optName(o)+'</option>'; }).join('');
+      for(var k2=0;k2<3;k2++) document.getElementById('opt'+k2).innerHTML = html;
+      if(keepSel && prev){
+        for(var j=0;j<3;j++){
+          var v = parseInt(prev[j],10);
+          document.getElementById('opt'+j).value = (v>=0 && v<opts.length) ? String(v) : '-1';
+        }
+      } else {
+        document.getElementById('opt0').value='0';
+        document.getElementById('opt1').value='-1';
+        document.getElementById('opt2').value='-1';
+      }
+      updateBracketHint();
+    }
+
+    // ===== 성공 확률: 첫 줄/둘째 줄/셋째 줄을 각각 구분해 순서 무관 조합 확률 계산 =====
+    function successProb(){
+      if(curCube()==='silver') return { err:'실버 큐브(장인의 큐브)는 유니크 등급까지만 재설정됩니다. 레전드리 옵션은 블랙 또는 골드 큐브를 사용하세요.' };
+      var cube = curCube();
+      var opts = curOpts();
+      var byIdx = {};
+      for(var k=0;k<3;k++){
+        var idx = parseInt(document.getElementById('opt'+k).value,10);
+        if(idx<0) continue;
+        var o = opts[idx];
+        if(!byIdx[idx]) byIdx[idx] = { l1:o.l1/100, l2:o.l2/100, l3:l3Of(cube,o)/100, need:0 };
+        byIdx[idx].need += 1;
+      }
+      var T = Object.keys(byIdx).map(function(n){ return byIdx[n]; });
+      if(T.length===0) return { err:'옵션을 한 줄 이상 선택하세요.' };
+
+      var s1=0,s2=0,s3=0;
+      T.forEach(function(g){ s1+=g.l1; s2+=g.l2; s3+=g.l3; });
+      var oth = [0, 1-s1, 1-s2, 1-s3]; // index by line 1..3
+      for(var li=1;li<=3;li++){ if(oth[li]<-1e-9) return {err:'선택 옵션 확률 합이 100%를 넘습니다.'}; if(oth[li]<0) oth[li]=0; }
+      function pLine(a, line){
+        if(a<0) return oth[line];
+        return line===1 ? T[a].l1 : (line===2 ? T[a].l2 : T[a].l3);
+      }
+      var d=T.length, total=0;
+      for(var a1=-1;a1<d;a1++)
+        for(var a2=-1;a2<d;a2++)
+          for(var a3=-1;a3<d;a3++){
+            var ok=true;
+            for(var i=0;i<d;i++){
+              var c=(a1===i?1:0)+(a2===i?1:0)+(a3===i?1:0);
+              if(c<T[i].need){ ok=false; break; }
+            }
+            if(!ok) continue;
+            total += pLine(a1,1)*pLine(a2,2)*pLine(a3,3);
+          }
+      return { p: total };
+    }
+
+    function fmtInt(n){ return Math.round(n).toLocaleString('ko-KR'); }
+    function fmtMeso(n){
+      if(n>=1e12) return (n/1e12).toFixed(2)+'조';
+      if(n>=1e8) return (n/1e8).toFixed(2)+'억';
+      if(n>=1e4) return Math.round(n/1e4).toLocaleString('ko-KR')+'만';
+      return fmtInt(n);
+    }
+
+    function costMesoVal(){ return parseFloat((document.getElementById('costMeso').value||'').replace(/,/g,''))||0; }
+
+    function isMiracle(){ var el=document.getElementById('miracleChk'); return el && el.checked; }
+    function onMiracleChange(){ if(document.getElementById('resultBox').style.display!=='none') runCalc(); }
+
+    // 등급 상승(등업) 표: 각 등급의 등업 확률·기대 재설정 수·예상 메소
+    function renderGradeUp(){
+      var cube = curCube();
+      var g = GRADE_UP[cube];
+      var mult = isMiracle() ? 2 : 1;
+      var ceil = CEIL_UP[cube] || {};
+      var steps = [
+        { key:'re', from:'rare', to:'epic', prob:g.re },
+        { key:'eu', from:'epic', to:'unique', prob:g.eu },
+        { key:'ul', from:'unique', to:'legendary', prob:g.ul }
+      ];
+      var curI = gradeIdx(curGrade()), tgtI = gradeIdx(tgtGrade());
+      var hasCeil = false, sumExp = 0, sumMeso = 0, impossible = false, pathCount = 0;
+      var rows = steps.map(function(s, i){
+        // 이 단계(from=인덱스 i)가 기존→목표 경로에 포함되는지
+        var inPath = (i >= curI && i < tgtI);
+        var hl = inPath ? ' style="background:var(--accent-soft);font-weight:700"' : ' style="color:var(--text-muted)"';
+        var label = GRADE_LABEL[s.from] + ' → ' + GRADE_LABEL[s.to];
+        var N = ceil[s.key];
+        var ceilTxt = N ? ' <span style="color:var(--text-muted);font-weight:400">(천장 '+N+')</span>' : '';
+        if(s.prob==null){
+          if(inPath) impossible = true;
+          return '<tr'+hl+'><td>'+label+'</td><td class="num">불가</td><td class="num">—</td><td class="num">—</td></tr>';
+        }
+        var prob = Math.min(1, s.prob*mult);
+        var exp;
+        if(N && prob>0 && prob<1){ exp = (1 - Math.pow(1-prob, N))/prob; hasCeil = true; }
+        else exp = 1/prob;
+        var meso = exp * costOf(s.from);
+        if(inPath){ sumExp += exp; sumMeso += meso; pathCount++; }
+        return '<tr'+hl+'><td>'+label+ceilTxt+'</td><td class="num">'+(prob*100).toFixed(4)+'%</td><td class="num">'+fmtInt(exp)+'회</td><td class="num">'+fmtMeso(meso)+'</td></tr>';
+      }).join('');
+      // 합계(기존→목표) 행
+      if(pathCount>0 && !impossible){
+        rows += '<tr style="border-top:2px solid var(--accent); font-weight:800"><td>합계 '+GRADE_LABEL[curGrade()]+' → '+GRADE_LABEL[tgtGrade()]+'</td><td class="num">—</td><td class="num">'+fmtInt(sumExp)+'회</td><td class="num">'+fmtMeso(sumMeso)+'</td></tr>';
+      } else if(impossible){
+        rows += '<tr style="border-top:2px solid var(--danger); font-weight:700; color:var(--danger)"><td colspan="4">이 큐브로는 '+GRADE_LABEL[tgtGrade()]+' 등급까지 올릴 수 없습니다.</td></tr>';
+      }
+      gradeUpTotalMeso = (pathCount>0 && !impossible) ? sumMeso : 0; // 등업 총 비용(경로) 저장
+      document.getElementById('gradeUpBody').innerHTML = rows;
+      var cubeLabel = {black:'블랙 큐브(메소 재설정)',gold:'골드 큐브(명장)',silver:'실버 큐브(장인)'}[cube];
+      var mira = isMiracle() ? ' ✨ 미라클 타임 적용(등업 확률 2배).' : '';
+      var ceilNote = hasCeil ? ' 확정 등급 상승(천장) 반영.' : ' 천장 없는 큐브는 평균 = 1÷확률.';
+      var pathNote = (tgtI<=curI) ? ' (목표 등급이 기존과 같거나 낮아 등업 없음)' : '';
+      document.getElementById('gradeUpDesc').textContent = cubeLabel + ' · 강조된 행이 기존→목표 경로이며 합계는 그 구간의 등업 총 기댓값입니다.' + ceilNote + mira + pathNote;
+    }
+
+    var lastP = NaN;
+    var gradeUpTotalMeso = 0;
+    function runCalc(){
+      var err = document.getElementById('errMsg'); err.textContent='';
+      var box = document.getElementById('resultBox'); box.style.display='block';
+      renderGradeUp();
+
+      var optRes = document.getElementById('optResult');
+      // 옵션 조합 확률은 목표가 레전드리일 때만 계산
+      if(tgtGrade()!=='legendary'){
+        optRes.style.display='none';
+        return;
+      }
+      var res = successProb();
+      if(res.err){ err.textContent=res.err; optRes.style.display='none'; lastP=NaN; return; }
+      var p = res.p;
+      if(isNaN(p) || p<=0){ err.textContent='성공 확률이 0입니다. 옵션 선택을 확인하세요.'; optRes.style.display='none'; return; }
+      if(p>1) p=1;
+      lastP = p;
+      optRes.style.display='block';
+
+      document.getElementById('rP').textContent = (p*100).toFixed(4)+'%';
+      var expect = 1/p;
+      var ln1mp = (p>=1) ? -Infinity : Math.log(1-p);
+      document.getElementById('rExpect').textContent = fmtInt(expect);
+
+      var meso = costMesoVal();
+      var optMeso = (meso>0) ? expect*meso : 0;
+      document.getElementById('rMeso').textContent = (meso>0) ? fmtMeso(optMeso) : '—';
+      // 총 기대 비용 = 등업 총비용 + 옵션 재설정 비용
+      var grand = gradeUpTotalMeso + optMeso;
+      var gl = (gradeUpTotalMeso>0)
+        ? '총 기대 비용 (등업 '+fmtMeso(gradeUpTotalMeso)+' + 옵션 '+fmtMeso(optMeso)+')'
+        : '총 기대 비용 (옵션 재설정만)';
+      document.getElementById('rGrandLabel').textContent = gl;
+      document.getElementById('rGrand').textContent = (meso>0) ? fmtMeso(grand) : '—';
+
+      drawChart(p);
+    }
+
+    // ===== 확신도 → 필요 재설정 횟수 그래프 (5% 간격 막대 + 호버 툴팁) =====
+    var CHART = { bars:[], W:0 };
+    function nAt(p, conf){ return (p>=1)?1:Math.ceil(Math.log(1-conf)/Math.log(1-p)); }
+    function drawChart(p){
+      var cv = document.getElementById('confChart');
+      var dpr = window.devicePixelRatio||1;
+      var cssW = cv.clientWidth || 600, cssH = 280;
+      cv.width = cssW*dpr; cv.height = cssH*dpr;
+      var ctx = cv.getContext('2d'); ctx.scale(dpr,dpr);
+      ctx.clearRect(0,0,cssW,cssH);
+      var cs = getComputedStyle(document.documentElement);
+      var col = function(v){ return cs.getPropertyValue(v).trim() || '#888'; };
+      var text = col('--text-muted'), grid = col('--border'), accent = col('--accent');
+      var meso = costMesoVal();
+
+      var padL=54, padR=16, padT=12, padB=34;
+      var W=cssW-padL-padR, H=cssH-padT-padB;
+
+      // 5% 간격 막대 데이터 (5,10,...,95%)
+      var confs=[]; for(var c=5;c<=95;c+=5) confs.push(c);
+      var maxN=1;
+      confs.forEach(function(cc){ var n=nAt(p, cc/100); if(n>maxN) maxN=n; });
+      function niceMax(v){ var e=Math.pow(10,Math.floor(Math.log10(v))); var f=v/e; var nf=f<=1?1:f<=2?2:f<=5?5:10; return nf*e; }
+      var yMax=niceMax(maxN);
+      function X(cp){ return padL + (cp/100)*W; }
+      function Y(n){ return padT + H - (n/yMax)*H; }
+
+      ctx.font='11px sans-serif'; ctx.textBaseline='middle';
+      // y 그리드 & 라벨
+      ctx.fillStyle=text; ctx.lineWidth=1;
+      for(var i=0;i<=5;i++){
+        var yv=yMax*i/5, yy=Y(yv);
+        ctx.strokeStyle=grid; ctx.globalAlpha=.5; ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(padL+W,yy); ctx.stroke(); ctx.globalAlpha=1;
+        ctx.textAlign='right'; ctx.fillText(fmtInt(yv), padL-8, yy);
+      }
+      // 막대
+      var barW = 0.05*W*0.66;
+      CHART.bars=[]; CHART.cv=cv;
+      confs.forEach(function(cc){
+        var n=nAt(p, cc/100);
+        var cx=X(cc), top=Y(n), base=Y(0);
+        ctx.fillStyle=accent; ctx.globalAlpha=(cc===90?1:.72);
+        ctx.fillRect(cx-barW/2, top, barW, base-top);
+        ctx.globalAlpha=1;
+        CHART.bars.push({ c:cc, n:n, meso:(meso>0? n*meso : null), cx:cx });
+      });
+      CHART.W=W;
+
+      // 기댓값(평균 재설정 횟수 = 1/p) 가로 점선 표시
+      var expect = (p>=1)?1:(1/p);
+      if(expect<=yMax){
+        var ey=Y(expect);
+        ctx.save();
+        ctx.strokeStyle='#f59e0b'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+        ctx.beginPath(); ctx.moveTo(padL,ey); ctx.lineTo(padL+W,ey); ctx.stroke();
+        ctx.restore();
+        // 라벨 (배경 박스 + 텍스트)
+        var lbl='기댓값 '+fmtInt(expect)+'회';
+        ctx.font='bold 11px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='left';
+        var tw=ctx.measureText(lbl).width;
+        var lx=padL+6, ly=ey-9; if(ly<padT+8) ly=ey+9;
+        ctx.fillStyle='#f59e0b'; ctx.globalAlpha=.15; ctx.fillRect(lx-3, ly-8, tw+6, 16); ctx.globalAlpha=1;
+        ctx.fillStyle='#b8760a'; ctx.fillText(lbl, lx, ly);
+        ctx.font='11px sans-serif';
+      }
+
+      // x 라벨
+      ctx.fillStyle=text; ctx.textAlign='center';
+      [5,25,50,75,90,95].forEach(function(cc){ ctx.fillText(cc+'%', X(cc), padT+H+16); });
+      ctx.fillText('성공 확신도(%)', padL+W/2, padT+H+30);
+    }
+
+    // 막대 호버 툴팁
+    function setupChartHover(){
+      var cv = document.getElementById('confChart');
+      var tip = document.getElementById('chartTip');
+      if(!cv || cv.__hoverSet) return; cv.__hoverSet=true;
+      cv.addEventListener('mousemove', function(e){
+        if(!CHART.bars.length){ tip.style.display='none'; return; }
+        var rect=cv.getBoundingClientRect();
+        var x=e.clientX-rect.left;
+        var best=null, bd=1e9;
+        CHART.bars.forEach(function(b){ var d=Math.abs(x-b.cx); if(d<bd){bd=d;best=b;} });
+        if(!best || bd > (CHART.W*0.03)){ tip.style.display='none'; return; }
+        var mesoTxt = (best.meso!=null) ? '<br>예상 메소 <b>'+fmtMeso(best.meso)+'</b>' : '';
+        tip.innerHTML = '성공 확신도 <b>'+best.c+'%</b><br>필요 재설정 <b>'+fmtInt(best.n)+'회</b>'+mesoTxt;
+        tip.style.display='block';
+        var tw=tip.offsetWidth, th=tip.offsetHeight;
+        var left=best.cx+12; if(left+tw > cv.clientWidth) left=best.cx-tw-12;
+        var top=e.clientY-rect.top-th-8; if(top<0) top=e.clientY-rect.top+14;
+        tip.style.left=left+'px'; tip.style.top=top+'px';
+      });
+      cv.addEventListener('mouseleave', function(){ tip.style.display='none'; });
+    }
+
+    function init(){
+      syncGradeUI();
+      autofillMeso();
+      rebuildLines(false);
+      setupChartHover();
+    }
+    init();
+    window.addEventListener('resize', function(){ if(!isNaN(lastP)) drawChart(lastP); });
+  </script>
+</body>
+</html>

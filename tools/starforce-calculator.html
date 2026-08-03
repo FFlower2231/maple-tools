@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>메이플스토리 스타포스 강화 기댓값 계산기 — 불편함 해결소</title>
+  <meta name="description" content="메이플스토리 스타포스 강화 기대 비용 계산기. 아이템 레벨·가격·현재/목표 스타포스와 샤이닝 스타포스 이벤트를 선택하면 몬테카를로 시뮬레이션으로 평균 비용·파괴 횟수와 성공 확신도 그래프를 보여줍니다." />
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⭐</text></svg>" />
+  <link rel="stylesheet" href="../assets/style.css" />
+  <!-- 애드센스 승인 후 아래 주석 해제 + 게시자 ID 교체
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  -->
+  <style>
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media(max-width:520px){ .row2 { grid-template-columns:1fr; } }
+    input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+    input[type=number]{ -moz-appearance:textfield; appearance:textfield; }
+    .chk-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; }
+    @media(max-width:520px){ .chk-grid { grid-template-columns:1fr; } }
+    .chk-grid label { display:flex; align-items:center; gap:8px; font-size:.9rem; cursor:pointer; padding:8px 10px; border:1px solid var(--border); border-radius:9px; background:var(--surface-2); }
+    .chk-grid input { width:auto; cursor:pointer; }
+    .calc-btn { width:100%; font-size:1.05rem; padding:14px; }
+    #resultBox { display:none; }
+    .pwrap { text-align:center; background:var(--accent-soft); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:18px; }
+    .pwrap span { display:block; font-size:.82rem; color:var(--text-muted); }
+    .pwrap b { font-size:1.5rem; font-weight:800; color:var(--accent); }
+    .big-out { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; }
+    .big-out .o { background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+    .big-out .o span { display:block; font-size:.78rem; color:var(--text-muted); margin-bottom:6px; }
+    .big-out .o b { font-size:1.25rem; font-weight:800; }
+    .big-out .o small { display:block; color:var(--text-muted); font-size:.75rem; margin-top:4px; }
+    .chart-wrap { position:relative; margin-top:18px; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:14px; }
+    .chart-wrap h4 { margin:0 0 4px; }
+    #confChart { width:100%; height:280px; display:block; cursor:crosshair; }
+    #chartTip { position:absolute; pointer-events:none; display:none; z-index:5; white-space:nowrap;
+      background:var(--surface); border:1px solid var(--accent); border-radius:8px; padding:8px 10px; font-size:.8rem; line-height:1.5; box-shadow:var(--shadow); }
+    #chartTip b { color:var(--accent); }
+    .note { font-size:.82rem; color:var(--text-muted); background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-top:14px; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="../index.html"><span class="logo">🛠️</span><span>불편함 해결소<small>매일 쓰는 작은 도구 모음</small></span></a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="테마 전환">🌙</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="breadcrumb"><a href="../index.html">홈</a> › 게임 도구 › 스타포스 강화 계산기</div>
+    <div class="tool-head">
+      <h1>⭐ 메이플스토리 스타포스 강화 기댓값 계산기</h1>
+      <p class="desc">아이템 레벨·가격·현재/목표 스타포스와 샤이닝 이벤트를 고르고 <b>계산하기</b>를 누르면, 몬테카를로 시뮬레이션으로 평균 비용·파괴 횟수와 성공 확신도 그래프를 보여줍니다.</p>
+    </div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+
+    <!-- ① 입력 -->
+    <div class="panel">
+      <h3 style="margin-top:0">① 강화 정보</h3>
+      <div class="row2">
+        <div class="field" style="margin:0"><label for="ilv">강화 아이템 레벨</label>
+          <input type="number" id="ilv" min="1" max="300" step="1" value="200" /></div>
+        <div class="field" style="margin:0"><label for="iprice">복구용 아이템(스페어) 가격 · 파괴 시 사용</label>
+          <input type="text" inputmode="numeric" id="iprice" class="comma" placeholder="예: 500,000,000" /></div>
+      </div>
+      <div class="row2" style="margin-top:14px">
+        <div class="field" style="margin:0"><label for="curStar">현재 스타포스</label>
+          <select id="curStar"></select></div>
+        <div class="field" style="margin:0"><label for="tgtStar">목표 스타포스</label>
+          <select id="tgtStar"></select></div>
+      </div>
+    </div>
+
+    <!-- ② 이벤트/옵션 -->
+    <div class="panel">
+      <h3 style="margin-top:0">② 샤이닝 스타포스 이벤트 · 옵션</h3>
+      <div class="chk-grid">
+        <label><input type="checkbox" id="evDiscount"> 강화 비용 30% 할인</label>
+        <label><input type="checkbox" id="ev51015"> 5·10·15성 성공 확률 100%</label>
+        <label><input type="checkbox" id="evDestroy"> 파괴 확률 30% 감소 (21성 이하)</label>
+        <label><input type="checkbox" id="evRecover"> 흔적 복구 비용 20% 할인</label>
+        <label><input type="checkbox" id="optSafe"> 파괴방지 사용 (15·16·17성, 원래비용 200% 추가)</label>
+      </div>
+    </div>
+
+    <!-- ③ 결과 -->
+    <div class="panel">
+      <h3 style="margin-top:0">③ 결과</h3>
+      <button class="btn primary calc-btn" onclick="runCalc()">계산하기</button>
+      <div id="errMsg" class="msg err"></div>
+
+      <div id="resultBox">
+        <div class="pwrap" style="margin-top:18px">
+          <span id="rangeTxt">— → —성 기대 총비용 (평균)</span>
+          <b id="rMean">—</b>
+        </div>
+        <div class="big-out">
+          <div class="o"><span>평균 강화 시도</span><b id="rTries">—</b><small>회</small></div>
+          <div class="o"><span>평균 파괴 횟수</span><b id="rDestroy">—</b><small>회</small></div>
+          <div class="o"><span>평균 복구 손실</span><b id="rEnhance">—</b><small>스페어+복구 메소</small></div>
+        </div>
+
+        <div class="chart-wrap">
+          <h4>성공 확신도 → 총비용</h4>
+          <div class="hint" style="margin:0 0 8px">막대(5% 간격)에 마우스를 올리면 확신도·총비용이 표시됩니다. <span style="color:#b8760a;font-weight:600">주황 점선</span> = 평균(기댓값).</div>
+          <canvas id="confChart"></canvas>
+          <div id="chartTip"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      📌 <b>2025년 3월 20일 스타포스 개편(30성 시스템) 기준</b>의 공식 확률·비용 공식을 반영했습니다. 성공 확률은 <b>스타캐치가 이미 반영된 값</b>이라 별도 스타캐치는 없으며, <b>강화 실패 시 하락 없이 유지</b>됩니다. 15성 이상에서 파괴가 발생하며, 파괴 시 <b>파괴 직전 성(최대 22성)으로 복구</b>합니다. 복구 비용은 넥슨 공식 표(성별 스페어 아이템 개수 + 복구 메소, 레벨 140/160/200/250 기준 보간)를 반영하며, ‘복구용 아이템 가격’이 스페어 아이템 값으로 쓰입니다(23성 이상 파괴는 22성으로 복구). <b>파괴방지</b>는 15·16·17성에서만 가능(원래비용 200% 추가, 할인 미적용)합니다. 샤이닝 스타포스 이벤트 3종(30% 할인 · 5·10·15성 100% · 21성 이하 파괴 30% 감소)을 반영하며, MVP·PC방 할인은 미반영입니다(슈페리얼 아이템 제외). 결과는 몬테카를로 시뮬레이션(2만 회) 기반이라 실행마다 소폭 달라질 수 있습니다. 목표는 <b>0~30성</b>까지 지원합니다.
+    </div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+  </main>
+
+  <footer class="site-footer">
+    <nav><a href="../index.html">홈</a><a href="cube-calculator.html">큐브 계산기</a><a href="potion-calculator.html">비약 계산기</a></nav>
+    <div>© 2026 불편함 해결소 · 모든 계산은 브라우저에서 처리됩니다.</div>
+  </footer>
+
+  <script src="../assets/app.js"></script>
+  <script>
+    // ===== 현재 KMS 스타포스 공식표 (2025.3.20 개편, 30성). 성공률은 스타캐치 반영값. 실패 시 하락 없음 =====
+    // s: 성공확률, d: 파괴확률 (%). fail = 100 - s - d = 유지
+    var SF = [
+      {s:99.75,d:0},{s:94.50,d:0},{s:89.25,d:0},{s:89.25,d:0},{s:84.00,d:0}, // 0~4
+      {s:78.75,d:0},{s:73.50,d:0},{s:68.25,d:0},{s:63.00,d:0},{s:57.75,d:0}, // 5~9
+      {s:52.50,d:0},{s:47.25,d:0},{s:42.00,d:0},{s:36.75,d:0},{s:31.50,d:0}, // 10~14
+      {s:31.50,d:2.055},{s:31.50,d:2.055},                                    // 15,16
+      {s:15.75,d:6.740},{s:15.75,d:6.740},{s:15.75,d:8.425},                  // 17,18,19
+      {s:31.50,d:10.275},{s:15.75,d:12.6375},{s:15.75,d:16.85},               // 20,21,22
+      {s:10.50,d:17.90},{s:10.50,d:17.90},{s:10.50,d:17.90},                  // 23,24,25
+      {s:7.35,d:18.53},{s:5.25,d:18.95},{s:3.15,d:19.37},{s:1.05,d:19.79}     // 26,27,28,29
+    ];
+    var MAX_STAR = 30;
+
+    // ===== 비용 공식 (현재 KMS, 메소). S=현재 성 =====
+    var COST_DIV = { // 10성 이상 (S+1)^2.7 나눗수
+      10:571,11:314,12:214,13:157,14:107,15:200,16:200,17:150,18:70,19:45,
+      20:200,21:125,22:200,23:200,24:200,25:200,26:200,27:200,28:200,29:200
+    };
+    function baseCost(L, s){
+      var c;
+      if(s<=9) c = 1000 + Math.pow(L,3)*(s+1)/36;
+      else c = 1000 + Math.pow(L,3)*Math.pow(s+1,2.7)/(COST_DIV[s]||200);
+      return Math.round(c/100)*100;
+    }
+
+    // ===== 파괴 장비 복구 (넥슨 공식 표: 스페어 아이템 개수 + 복구 메소, 레벨 140/160/200/250 기준). 단위: 억 메소 =====
+    var REC = {
+      15:{items:1, m:{140:1.49,160:2.22,200:4.33,250:8.46}},
+      16:{items:1, m:{140:3.59,160:5.35,200:10.5,250:20.4}},
+      17:{items:1, m:{140:6.06,160:9.04,200:17.7,250:34.5}},
+      18:{items:1, m:{140:13.8,160:20.6,200:40.1,250:78.3}},
+      19:{items:2, m:{140:22.8,160:34.1,200:66.5,250:130}},
+      20:{items:2, m:{140:40.2,160:60,200:118,250:229}},
+      21:{items:3, m:{140:50.5,160:75.4,200:148,250:288}},
+      22:{items:4, m:{140:82.9,160:124,200:242,250:473}}
+    };
+    function interpMeso(m, L){
+      var t=[140,160,200,250];
+      if(L<=140) return m[140];
+      if(L>=250) return m[250];
+      for(var i=0;i<3;i++){ if(L<=t[i+1]){ var lo=t[i],hi=t[i+1]; return m[lo]+(m[hi]-m[lo])*(L-lo)/(hi-lo); } }
+      return m[250];
+    }
+    // 파괴된 성(star)에서 복구(최대 22성) 총비용 = 스페어 아이템 + 복구 메소
+    function recoveryCost(star, o){
+      var rs = Math.min(star, 22);
+      var R = REC[rs]; if(!R) return { star:12, cost:o.price }; // 표 밖이면 12성 복구(1개)
+      var meso = interpMeso(R.m, o.L)*1e8;
+      if(o.recDisc) meso *= 0.8; // 흔적 복구 비용 20% 할인 이벤트
+      return { star: rs, cost: R.items*o.price + meso };
+    }
+
+    function opts(){
+      return {
+        L: parseInt(document.getElementById('ilv').value,10)||0,
+        price: parseFloat((document.getElementById('iprice').value||'').replace(/,/g,''))||0,
+        cur: parseInt(document.getElementById('curStar').value,10),
+        tgt: parseInt(document.getElementById('tgtStar').value,10),
+        discount: document.getElementById('evDiscount').checked,
+        e51015: document.getElementById('ev51015').checked,
+        destroyDown: document.getElementById('evDestroy').checked,
+        recDisc: document.getElementById('evRecover').checked,
+        safe: document.getElementById('optSafe').checked
+      };
+    }
+
+    // 한 번의 강화 시행 비용 (이벤트/파괴방지 반영)
+    function attemptCost(o, star){
+      var base = baseCost(o.L, star);
+      var c = o.discount ? base*0.7 : base;            // 30% 할인(곱적용)
+      if(o.safe && star>=15 && star<=17) c = c + 2*base; // 파괴방지: 원래비용 200% 추가(할인 미적용)
+      return c;
+    }
+
+    // 몬테카를로 1회: cur→tgt 총비용 반환 {cost, tries, destroys, recCost}
+    function simulateOnce(o){
+      var star = o.cur, cost = 0, tries = 0, destroys = 0, recCost = 0;
+      var guard = 0;
+      while(star < o.tgt){
+        if(guard++ > 200000) break;
+        tries++;
+        cost += attemptCost(o, star);
+        var base = SF[star];
+        var s = base.s/100, d = base.d/100;
+        // 이벤트/옵션
+        if(o.e51015 && (star===5 || star===10 || star===15)){ s = 1; d = 0; }
+        if(o.destroyDown && star<=21) d *= 0.7;   // 21성 이하 파괴 30% 감소
+        if(o.safe && star>=15 && star<=17) d = 0; // 파괴방지: 파괴→실패(유지)
+        // 성공확률 + 파괴확률이 1을 넘지 않도록 정리
+        if(s + d > 1) d = Math.max(0, 1 - s);
+        var r = Math.random();
+        if(r < s){
+          // 성공
+          star += 1;
+          if(star > MAX_STAR) star = MAX_STAR;
+        } else if(r < s + d){
+          // 파괴 → 파괴 직전 성(최대 22)으로 복구: 스페어 아이템 + 복구 메소
+          destroys++;
+          var rec = recoveryCost(star, o);
+          cost += rec.cost; recCost += rec.cost;
+          star = rec.star;
+        }
+        // 실패(그 외)는 하락 없이 유지 (현재 스타포스: 강화 하락 없음)
+      }
+      return { cost:cost, tries:tries, destroys:destroys, recCost:recCost };
+    }
+
+    var CHART = { bars:[], W:0 };
+    var lastMean = NaN;
+
+    function fmtInt(n){ return Math.round(n).toLocaleString('ko-KR'); }
+    function fmtMeso(n){
+      if(n>=1e12) return (n/1e12).toFixed(2)+'조';
+      if(n>=1e8) return (n/1e8).toFixed(2)+'억';
+      if(n>=1e4) return Math.round(n/1e4).toLocaleString('ko-KR')+'만';
+      return fmtInt(n);
+    }
+
+    function runCalc(){
+      var err = document.getElementById('errMsg'); err.textContent='';
+      var box = document.getElementById('resultBox');
+      var o = opts();
+      if(!o.L){ err.textContent='아이템 레벨을 입력하세요.'; box.style.display='none'; return; }
+      if(o.tgt<=o.cur){ err.textContent='목표 스타포스는 현재보다 높아야 합니다.'; box.style.display='none'; return; }
+
+      var N = 20000;
+      var costs = new Array(N), tSum=0, dSum=0, recSum=0;
+      for(var i=0;i<N;i++){
+        var r = simulateOnce(o);
+        costs[i] = r.cost; tSum += r.tries; dSum += r.destroys;
+        recSum += r.recCost;
+      }
+      costs.sort(function(a,b){ return a-b; });
+      var mean = costs.reduce(function(a,b){return a+b;},0)/N;
+      lastMean = mean;
+
+      box.style.display='block';
+      document.getElementById('rangeTxt').textContent = o.cur+' → '+o.tgt+'성 기대 총비용 (평균)';
+      document.getElementById('rMean').textContent = fmtMeso(mean);
+      document.getElementById('rTries').textContent = (tSum/N).toFixed(1);
+      document.getElementById('rDestroy').textContent = (dSum/N).toFixed(2);
+      document.getElementById('rEnhance').textContent = fmtMeso(recSum/N);
+
+      drawChart(costs, mean);
+    }
+
+    // 백분위 (정렬된 배열)
+    function pct(sorted, q){ var idx=Math.min(sorted.length-1, Math.floor(q*sorted.length)); return sorted[idx]; }
+
+    function drawChart(sorted, mean){
+      var cv=document.getElementById('confChart');
+      var dpr=window.devicePixelRatio||1, cssW=cv.clientWidth||600, cssH=280;
+      cv.width=cssW*dpr; cv.height=cssH*dpr;
+      var ctx=cv.getContext('2d'); ctx.scale(dpr,dpr); ctx.clearRect(0,0,cssW,cssH);
+      var cs=getComputedStyle(document.documentElement); var col=function(v){return cs.getPropertyValue(v).trim()||'#888';};
+      var text=col('--text-muted'), grid=col('--border'), accent=col('--accent');
+
+      var padL=64, padR=16, padT=12, padB=34, W=cssW-padL-padR, H=cssH-padT-padB;
+      var confs=[]; for(var c=5;c<=95;c+=5) confs.push(c);
+      var vals=confs.map(function(cc){ return pct(sorted, cc/100); });
+      var maxV=Math.max(vals[vals.length-1], mean);
+      function niceMax(v){ if(v<=0)return 1; var e=Math.pow(10,Math.floor(Math.log10(v))); var f=v/e; var nf=f<=1?1:f<=2?2:f<=5?5:10; return nf*e; }
+      var yMax=niceMax(maxV);
+      function X(cp){ return padL+(cp/100)*W; }
+      function Y(v){ return padT+H-(v/yMax)*H; }
+
+      ctx.font='11px sans-serif'; ctx.textBaseline='middle'; ctx.fillStyle=text;
+      for(var i=0;i<=5;i++){ var yv=yMax*i/5, yy=Y(yv); ctx.strokeStyle=grid; ctx.globalAlpha=.5; ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(padL+W,yy); ctx.stroke(); ctx.globalAlpha=1; ctx.textAlign='right'; ctx.fillText(fmtMeso(yv), padL-8, yy); }
+
+      var barW=0.05*W*0.66; CHART.bars=[]; CHART.W=W;
+      confs.forEach(function(cc,k){ var v=vals[k], cx=X(cc), top=Y(v), base=Y(0);
+        ctx.fillStyle=accent; ctx.globalAlpha=(cc===90?1:.72); ctx.fillRect(cx-barW/2, top, barW, base-top); ctx.globalAlpha=1;
+        CHART.bars.push({ c:cc, v:v, cx:cx });
+      });
+      // 평균(기댓값) 점선
+      if(mean<=yMax){ var ey=Y(mean); ctx.save(); ctx.strokeStyle='#f59e0b'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath(); ctx.moveTo(padL,ey); ctx.lineTo(padL+W,ey); ctx.stroke(); ctx.restore();
+        var lbl='평균 '+fmtMeso(mean); ctx.font='bold 11px sans-serif'; ctx.textAlign='left'; var lx=padL+6, ly=ey-9; if(ly<padT+8)ly=ey+9;
+        ctx.fillStyle='#f59e0b'; ctx.globalAlpha=.15; ctx.fillRect(lx-3,ly-8,ctx.measureText(lbl).width+6,16); ctx.globalAlpha=1; ctx.fillStyle='#b8760a'; ctx.fillText(lbl,lx,ly); ctx.font='11px sans-serif';
+      }
+      ctx.fillStyle=text; ctx.textAlign='center';
+      [5,25,50,75,90,95].forEach(function(cc){ ctx.fillText(cc+'%', X(cc), padT+H+16); });
+      ctx.fillText('성공 확신도(%)', padL+W/2, padT+H+30);
+    }
+
+    function setupHover(){
+      var cv=document.getElementById('confChart'), tip=document.getElementById('chartTip');
+      if(!cv||cv.__h) return; cv.__h=true;
+      cv.addEventListener('mousemove', function(e){
+        if(!CHART.bars.length){ tip.style.display='none'; return; }
+        var rect=cv.getBoundingClientRect(), x=e.clientX-rect.left, best=null, bd=1e9;
+        CHART.bars.forEach(function(b){ var d=Math.abs(x-b.cx); if(d<bd){bd=d;best=b;} });
+        if(!best||bd>CHART.W*0.03){ tip.style.display='none'; return; }
+        tip.innerHTML='성공 확신도 <b>'+best.c+'%</b><br>총비용 <b>'+fmtMeso(best.v)+'</b>';
+        tip.style.display='block';
+        var tw=tip.offsetWidth, th=tip.offsetHeight, left=best.cx+12; if(left+tw>cv.clientWidth) left=best.cx-tw-12;
+        var top=e.clientY-rect.top-th-8; if(top<0) top=e.clientY-rect.top+14;
+        tip.style.left=left+'px'; tip.style.top=top+'px';
+      });
+      cv.addEventListener('mouseleave', function(){ tip.style.display='none'; });
+    }
+
+    // 쉼표 자동
+    document.addEventListener('input', function(e){
+      var t=e.target; if(t&&t.classList&&t.classList.contains('comma')){
+        var raw=(t.value||'').replace(/[^0-9]/g,''); t.value = raw? Number(raw).toLocaleString('ko-KR'):'';
+      }
+    });
+
+    function init(){
+      var cur=document.getElementById('curStar'), tgt=document.getElementById('tgtStar');
+      var o1='', o2='';
+      for(var i=0;i<=MAX_STAR;i++){ o1+='<option value="'+i+'">'+i+'성</option>'; o2+='<option value="'+i+'">'+i+'성</option>'; }
+      cur.innerHTML=o1; tgt.innerHTML=o2;
+      cur.value='0'; tgt.value='22';
+      setupHover();
+    }
+    init();
+    window.addEventListener('resize', function(){ /* 차트는 재계산 필요 */ });
+  </script>
+</body>
+</html>

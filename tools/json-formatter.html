@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JSON 포맷터 / 검증기 — 불편함 해결소</title>
+  <meta name="description" content="엉킨 JSON을 보기 좋게 정렬하고, 오류 위치를 알려주는 무료 JSON 포맷터 및 검증기. 데이터는 브라우저에서만 처리됩니다." />
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>" />
+  <link rel="stylesheet" href="../assets/style.css" />
+  <!-- 애드센스 승인 후 아래 주석 해제 + 게시자 ID 교체
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  -->
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="../index.html"><span class="logo">🛠️</span><span>불편함 해결소<small>매일 쓰는 작은 도구 모음</small></span></a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="테마 전환">🌙</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="breadcrumb"><a href="../index.html">홈</a> › 개발자 도구 › JSON 포맷터</div>
+    <div class="tool-head">
+      <h1>🧩 JSON 포맷터 / 검증기</h1>
+      <p class="desc">JSON을 붙여넣고 정렬하세요. 문법 오류가 있으면 위치와 함께 알려드립니다.</p>
+    </div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+
+    <div class="panel">
+      <div class="field">
+        <label for="input">입력 JSON</label>
+        <textarea id="input" placeholder='{"name":"홍길동","age":30,"tags":["a","b"]}'></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="format(2)">정렬 (들여쓰기 2)</button>
+        <button class="btn" onclick="format(4)">정렬 (들여쓰기 4)</button>
+        <button class="btn" onclick="minify()">한 줄로 압축</button>
+        <button class="btn" onclick="clearAll()">지우기</button>
+      </div>
+      <div id="msg" class="msg"></div>
+
+      <div class="result" id="resultBox" style="display:none">
+        <div class="field">
+          <label for="output">결과</label>
+          <textarea id="output" readonly></textarea>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="copyBtn" onclick="copyText(document.getElementById('output').value, this)">결과 복사</button>
+          <span class="msg" id="stats" style="align-self:center"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
+  </main>
+
+  <footer class="site-footer">
+    <nav><a href="../index.html">홈</a><a href="timestamp.html">타임스탬프</a><a href="base64.html">Base64</a><a href="color-converter.html">색상</a></nav>
+    <div>© 2026 불편함 해결소 · 입력한 데이터는 서버로 전송되지 않습니다.</div>
+  </footer>
+
+  <script src="../assets/app.js"></script>
+  <script>
+    var msg = document.getElementById('msg');
+    var box = document.getElementById('resultBox');
+    var out = document.getElementById('output');
+    var stats = document.getElementById('stats');
+
+    function show(text, ok) {
+      msg.textContent = text;
+      msg.className = 'msg ' + (ok ? 'ok' : 'err');
+    }
+    function parseInput() {
+      var raw = document.getElementById('input').value.trim();
+      if (!raw) { show('JSON을 입력하세요.', false); box.style.display = 'none'; return null; }
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        var m = /position (\d+)/.exec(e.message);
+        var where = '';
+        if (m) {
+          var pos = parseInt(m[1], 10);
+          var before = raw.slice(0, pos);
+          var line = before.split('\n').length;
+          var col = pos - before.lastIndexOf('\n');
+          where = ' (약 ' + line + '행 ' + col + '열 부근)';
+        }
+        show('❌ 올바른 JSON이 아닙니다: ' + e.message + where, false);
+        box.style.display = 'none';
+        return null;
+      }
+    }
+    function format(indent) {
+      var data = parseInput();
+      if (data === null) return;
+      out.value = JSON.stringify(data, null, indent);
+      box.style.display = 'block';
+      show('✓ 유효한 JSON입니다.', true);
+      updateStats();
+    }
+    function minify() {
+      var data = parseInput();
+      if (data === null) return;
+      out.value = JSON.stringify(data);
+      box.style.display = 'block';
+      show('✓ 압축 완료.', true);
+      updateStats();
+    }
+    function updateStats() {
+      var inLen = document.getElementById('input').value.length;
+      var outLen = out.value.length;
+      stats.textContent = '입력 ' + inLen.toLocaleString() + '자 → 결과 ' + outLen.toLocaleString() + '자';
+    }
+    function clearAll() {
+      document.getElementById('input').value = '';
+      out.value = ''; box.style.display = 'none'; msg.textContent = '';
+    }
+  </script>
+</body>
+</html>
