@@ -46,13 +46,7 @@ window.copyText = function (text, btn) {
   // 도구 목록 (루트 기준 경로). 새 도구는 여기만 추가하면 전 페이지 메뉴에 반영됩니다.
   var NAV = [
     { group: null, items: [ { href: 'index.html', label: '홈', icon: '🏠' } ] },
-    { group: '개발자 도구', items: [
-      { href: 'tools/json-formatter.html', label: 'JSON 포맷터', icon: '🧩' },
-      { href: 'tools/timestamp.html', label: '타임스탬프 변환기', icon: '⏱️' },
-      { href: 'tools/base64.html', label: 'Base64 인코더', icon: '🔁' },
-      { href: 'tools/color-converter.html', label: '색상 변환기', icon: '🎨' }
-    ]},
-    { group: '게임 도구', items: [
+    { group: '메이플스토리 계산기', items: [
       { href: 'tools/cube-calculator.html', label: '큐브 기댓값 계산기', icon: '🎲' },
       { href: 'tools/starforce-calculator.html', label: '스타포스 강화 계산기', icon: '⭐' },
       { href: 'tools/potion-calculator.html', label: '비약 순이익 계산기', icon: '⚗️' }
