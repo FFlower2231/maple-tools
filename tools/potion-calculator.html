@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>메이플 비약 제작 순이익 계산기 (소재비·소경비) — 불편함 해결소</title>
-  <meta name="description" content="소형 재물 획득의 비약, 소형 고농축 경험 축적의 비약, 고급 보스 킬러의 비약의 재료비·판매가·경매장 수수료를 넣으면 피로도 500 기준 순이익을 계산합니다. 쥬니퍼베리 씨앗 오일 자작 이득도 계산." />
+  <title>메이플 소형 재물 획득의 비약 제작 순이익 계산기 — 불편함 해결소</title>
+  <meta name="description" content="메이플스토리 소형 재물 획득의 비약(소재비) 제작 순이익 계산기. 재료비·판매가·경매장 수수료를 넣으면 피로도당 순이익과 손익분기 판매가를 계산합니다." />
   <meta name="theme-color" content="#4f46e5" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚗️</text></svg>" />
   <link rel="stylesheet" href="../assets/style.css?v=2" />
@@ -51,12 +51,6 @@
     .res .be span { font-weight:600; color:var(--text); }
     .res .be b { font-family:ui-monospace,monospace; font-size:1.05rem; font-weight:800; color:var(--accent); }
     .addbtn { margin-top:8px; }
-    table.cmp { width:100%; border-collapse:collapse; margin-top:8px; font-size:.9rem; }
-    table.cmp th, table.cmp td { padding:9px 8px; border-bottom:1px solid var(--border); text-align:right; }
-    table.cmp th:first-child, table.cmp td:first-child { text-align:left; }
-    table.cmp th { color:var(--text-muted); font-weight:600; font-size:.78rem; }
-    table.cmp td { font-family:ui-monospace,monospace; }
-    table.cmp tr.best td { background:var(--accent-soft); font-weight:700; }
     .note { font-size:.82rem; color:var(--text-muted); background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-top:14px; }
   </style>
 </head>
@@ -72,7 +66,7 @@
     <div class="breadcrumb"><a href="../index.html">홈</a> › 비약 제작 순이익 계산기</div>
     <div class="tool-head">
       <h1>⚗️ 메이플 비약 제작 순이익 계산기</h1>
-      <p class="desc">재료비·판매가·경매장 수수료를 입력하면 피로도 기준 순이익을 계산합니다. 소재비 · 소형 고농축 경축비 · 고급 보킬비, 쥬니퍼베리 씨앗 오일 자작 이득 포함.</p>
+      <p class="desc">재료비·판매가·경매장 수수료를 입력하면 피로도 기준 순이익과 손익분기 판매가를 계산합니다. 쥬니퍼베리 씨앗 오일 자작 원가 반영.</p>
     </div>
 
     <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
@@ -90,7 +84,7 @@
     <!-- 재료 가격 입력 (한 번만) -->
     <div class="panel">
       <h3 style="margin-top:0">재료 가격 (개당, 메소)</h3>
-      <p class="sub" style="font-size:.82rem; color:var(--text-muted); margin:0 0 12px;">각 재료의 개당 가격을 한 번만 입력하면 모든 비약에 자동 적용됩니다.</p>
+      <p class="sub" style="font-size:.82rem; color:var(--text-muted); margin:0 0 12px;">소형 재물 획득의 비약에 들어가는 재료의 개당 가격을 입력하세요.</p>
       <div id="matPrices" class="price-grid"></div>
     </div>
 
@@ -111,17 +105,9 @@
 
     <div class="ad-slot">광고 영역 (애드센스 승인 후 표시)</div>
 
-    <div class="panel">
-      <h3 style="margin-top:0">📊 비교 요약 (피로도 <span id="budgetEcho">500</span> 기준)</h3>
-      <table class="cmp">
-        <thead><tr><th>비약</th><th>제작 수</th><th>생산량</th><th>재료비</th><th>판매수익</th><th>순이익</th><th>피로도당</th></tr></thead>
-        <tbody id="cmpBody"></tbody>
-      </table>
-      <div class="hint">‘피로도당’은 순이익 ÷ 피로도 예산입니다. 값이 가장 큰 비약이 강조됩니다.</div>
-    </div>
-
     <div class="note">
-      📌 <b>재료 가격은 상단 표에서 한 번만</b> 입력하면 여러 비약에 공통 적용됩니다(중복 입력 불필요). 세 비약의 재료·수량·산출 개수·피로도는 확정값으로 고정되어 있습니다. 산출은 소재비 6개·소경비 4개·고급 보킬비 2개, 피로도는 소재비·소경비 5, 고급 보킬비 10이며, 판매가만 비약별로 입력합니다.
+      📌 <b>소형 재물 획득의 비약</b>(소재비) 기준입니다. 재료·수량은 확정값으로 고정되어 있으며(1회 제작 6개 · 피로도 5), 재료 가격과 판매가만 입력하면 됩니다. 쥬니퍼베리 씨앗 오일은 <b>씨앗으로 직접 만든 원가</b>로 계산됩니다.
+      <span id="budgetEcho" style="display:none">500</span>
       자료 출처: <a href="https://livehepa.blogspot.com/2022/06/maple-secret-potion.html" target="_blank" rel="noopener">연금술 비약 재료 정리</a> · <a href="https://maple.begchi.com/%EC%86%8C%ED%98%95-%EC%9E%AC%ED%9A%8D%EB%B9%84-%EC%A0%9C%EC%9E%91-%EB%A0%88%EC%8B%9C%ED%94%BC-%EC%9E%AC%EB%A3%8C-%EC%A0%95%EB%B3%B4" target="_blank" rel="noopener">비공식센터</a>.
     </div>
 
@@ -145,26 +131,6 @@
           { name:'쥬니퍼베리 씨앗 오일', qty:5 },
           { name:'최상급 아이템 결정', qty:2 },
           { name:'현자의 돌', qty:1 }
-        ]
-      },
-      {
-        id:'sogyeong', name:'소형 고농축 경험 축적의 비약', desc:'소경비/농쭉비 · 경험치 +20% · 1회 제작 4개 · 피로도 5',
-        out:4, fatigue:5,
-        mats:[
-          { name:'소형 경험 축적의 비약', qty:4 },
-          { name:'영롱한 황혼의 정수', qty:2 },
-          { name:'히솝 꽃 오일', qty:10 },
-          { name:'마력 결정', qty:1000 }
-        ]
-      },
-      {
-        id:'gobos', name:'고급 보스 킬러의 비약', desc:'고급 보킬비 · 명장 비약 · 1회 제작 2개 · 피로도 10',
-        out:2, fatigue:10,
-        mats:[
-          { name:'보스 킬러의 비약', qty:1 },
-          { name:'히솝 꽃 오일', qty:10 },
-          { name:'상급 주문의 정수', qty:1 },
-          { name:'영롱한 황혼의 정수', qty:1 }
         ]
       }
     ];
@@ -321,23 +287,6 @@
 
         cmp.push({name:r.name, crafts:crafts, produced:produced, cost:totalCost, rev:revenue, profit:profit, per:perFat});
       });
-
-      // 비교표
-      var best = -Infinity;
-      cmp.forEach(function(c){ if(c.profit!==null && c.per>best) best=c.per; });
-      document.getElementById('cmpBody').innerHTML = cmp.map(function(c){
-        if(c.profit===null) return '<tr><td>'+c.name+'</td><td colspan="6">입력 필요</td></tr>';
-        var isBest = (c.per===best && best>-Infinity);
-        return '<tr'+(isBest?' class="best"':'')+'>'+
-          '<td>'+c.name+'</td>'+
-          '<td>'+c.crafts.toLocaleString('ko-KR')+'</td>'+
-          '<td>'+c.produced.toLocaleString('ko-KR')+'</td>'+
-          '<td>'+fmt(c.cost)+'</td>'+
-          '<td>'+fmt(c.rev)+'</td>'+
-          '<td class="'+(c.profit>=0?'pos':'neg')+'">'+fmt(c.profit)+'</td>'+
-          '<td class="'+(c.per>=0?'pos':'neg')+'">'+fmt(c.per)+'</td>'+
-        '</tr>';
-      }).join('');
     }
 
     // 쥬니퍼베리 씨앗 오일 자작 계산 + 손익분기 가격 안내
