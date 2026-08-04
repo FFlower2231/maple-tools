@@ -46,6 +46,10 @@
     .res .profit { border-top:1px solid var(--border); margin-top:6px; padding-top:10px; font-size:1.05rem; }
     .res .profit b { font-weight:800; }
     .pos { color:var(--success); } .neg { color:var(--danger); }
+    .res .be { display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:10px 12px;
+      background:var(--accent-soft); border:1px solid var(--accent); border-radius:9px; font-size:.92rem; }
+    .res .be span { font-weight:600; color:var(--text); }
+    .res .be b { font-family:ui-monospace,monospace; font-size:1.05rem; font-weight:800; color:var(--accent); }
     .addbtn { margin-top:8px; }
     table.cmp { width:100%; border-collapse:collapse; margin-top:8px; font-size:.9rem; }
     table.cmp th, table.cmp td { padding:9px 8px; border-bottom:1px solid var(--border); text-align:right; }
@@ -301,10 +305,16 @@
         var profit = revenue-totalCost;
         var perFat = budget>0 ? profit/budget : 0;
 
+        // 손익분기 판매가: 개당 판매가 × (1-수수료) = 개당 재료비  →  break = (재료비/개) / (1-수수료)
+        var costPerUnit = out>0 ? matCostPerCraft/out : 0;
+        var breakEven = (fee<1 && costPerUnit>0) ? costPerUnit/(1-fee) : 0;
+
         resEl.innerHTML =
           '<div class="line"><span>제작 횟수</span><b>'+crafts.toLocaleString('ko-KR')+'회</b></div>'+
           '<div class="line"><span>총 생산량</span><b>'+produced.toLocaleString('ko-KR')+'개</b></div>'+
           '<div class="line"><span>총 재료비</span><b>'+fmt(totalCost)+'</b></div>'+
+          '<div class="line"><span>개당 원가</span><b>'+fmt(costPerUnit)+' 메소</b></div>'+
+          (breakEven>0 ? '<div class="be"><span>손익분기점 · 판매가 1개</span><b>'+fmt(breakEven)+' 메소</b></div>' : '')+
           '<div class="line"><span>판매수익(수수료 '+(fee*100).toFixed(1)+'% 차감)</span><b>'+fmt(revenue)+'</b></div>'+
           '<div class="line profit"><span>순이익</span><b class="'+(profit>=0?'pos':'neg')+'">'+fmt(profit)+' 메소</b></div>'+
           '<div class="line"><span>피로도당 순이익</span><b class="'+(perFat>=0?'pos':'neg')+'">'+fmt(perFat)+'</b></div>';
@@ -349,13 +359,8 @@
       el.innerHTML =
         '<div class="line"><span>오일 1개당 평균 씨앗 (산출률 '+(yieldRate*100).toFixed(0)+'%)</span><b>'+effSeeds.toFixed(2)+'개</b></div>'+
         '<div class="line"><span>씨앗 값 '+fmt(seed)+' × '+effSeeds.toFixed(2)+'개 + 허브오일병</span><b>'+fmt(unit)+' 메소</b></div>'+
-        '<div class="line profit"><span>🌿 자작 시 오일 1개 원가</span><b class="pos">'+fmt(unit)+' 메소</b></div>'+
-        '<div class="line" style="margin-top:10px; border-top:1px solid var(--border); padding-top:12px">'+
-          '<span>💡 경매장 오일이 <b>'+fmt(unit)+' 메소</b>보다</span>'+
-        '</div>'+
-        '<div class="line"><span style="padding-left:14px">· 싸면 → <b class="pos">사는 게 이득</b></span></div>'+
-        '<div class="line"><span style="padding-left:14px">· 비싸면 → <b class="pos">직접 만드는 게 이득</b></span></div>'+
-        '<div class="hint" style="margin-top:8px">즉 오일 1개를 <b>'+fmt(unit)+' 메소 이하</b>로 살 수 있으면 사는 편이 낫고, 그보다 비싸면 씨앗을 사서 직접 만드는 게 이득입니다. (아래 소재비 재료비는 자작 원가 '+fmt(unit)+' 메소로 계산됩니다.)</div>';
+        '<div class="be"><span>손익분기점 · 오일 1개</span><b>'+fmt(unit)+' 메소</b></div>'+
+        '<div class="hint" style="margin-top:8px">경매장 오일이 이 가격보다 싸면 사고, 비싸면 직접 만드세요. 아래 소재비 재료비는 이 자작 원가로 계산됩니다.</div>';
 
       calcAll();
     }
