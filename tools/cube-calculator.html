@@ -7,7 +7,7 @@
   <meta name="description" content="메이플스토리 잠재능력 큐브(블랙/골드/실버) 옵션 기댓값 계산기. 부위·레벨·큐브를 고르고 원하는 옵션 3줄을 선택하면 넥슨 공식 확률로 성공 확률·기대 재설정 횟수·예상 메소·확신도 그래프를 보여줍니다." />
   <meta name="theme-color" content="#4f46e5" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>" />
-  <link rel="stylesheet" href="../assets/style.css" />
+  <link rel="stylesheet" href="../assets/style.css?v=2" />
   <!-- 애드센스 승인 후 아래 주석 해제 + 게시자 ID 교체
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
   -->
@@ -45,13 +45,13 @@
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <a class="brand" href="../index.html"><span class="logo">🛠️</span><span>불편함 해결소<small>매일 쓰는 작은 도구 모음</small></span></a>
+      <a class="brand" href="../index.html"><span class="logo">🛠️</span><span>불편함 해결소<small>메이플스토리 계산기 모음</small></span></a>
       <button class="theme-toggle" onclick="toggleTheme()" aria-label="테마 전환">🌙</button>
     </div>
   </header>
 
   <main class="wrap">
-    <div class="breadcrumb"><a href="../index.html">홈</a> › 게임 도구 › 큐브 기댓값 계산기</div>
+    <div class="breadcrumb"><a href="../index.html">홈</a> › 큐브 기댓값 계산기</div>
     <div class="tool-head">
       <h1>🎲 메이플스토리 큐브 옵션 기댓값 계산기</h1>
       <p class="desc">큐브·부위·레벨과 <b>기존 등급 → 목표 등급</b>을 고른 뒤 <b>계산하기</b>를 누르면 등급 상승(등업) 총 기댓값과, 레전드리 옵션 조합 성공 확률·기대 재설정·예상 메소·확신도 그래프를 보여줍니다. (넥슨 공식 확률, 천장 반영)</p>
@@ -188,11 +188,11 @@
   </main>
 
   <footer class="site-footer">
-    <nav><a href="../index.html">홈</a><a href="potion-calculator.html">비약 계산기</a><a href="json-formatter.html">JSON</a><a href="timestamp.html">타임스탬프</a></nav>
+    <nav><a href="../index.html">홈</a><a href="starforce-calculator.html">스타포스 계산기</a><a href="potion-calculator.html">비약 계산기</a></nav>
     <div>© 2026 불편함 해결소 · 모든 계산은 브라우저에서 처리됩니다. 확률 데이터 출처: 넥슨 메이플스토리 공식 가이드.</div>
   </footer>
 
-  <script src="../assets/app.js"></script>
+  <script src="../assets/app.js?v=2"></script>
   <script>
     // ===== 넥슨 공식 확률(레전드리) =====
     // 각 옵션: n1=레벨120~200 수치, n2=레벨201~250 수치, l1=첫 줄%, l2=둘째 줄%.
