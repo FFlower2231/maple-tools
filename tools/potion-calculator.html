@@ -93,15 +93,14 @@
     <!-- 쥬니퍼베리 씨앗 오일 자작 계산 -->
     <div class="panel">
       <h3 style="margin-top:0">🌿 쥬니퍼베리 씨앗 오일 자작 이득</h3>
-      <p class="sub" style="font-size:.82rem; color:var(--text-muted); margin:0 0 14px;">씨앗 가격은 <b>상단의 ‘쥬니퍼베리 씨앗’</b>에서 가져오고, 아래 ‘오일 1개 시세’는 <b>상단 ‘쥬니퍼베리 씨앗 오일’ 가격과 양방향 연동</b>됩니다(한쪽에 입력하면 같이 채워짐). 자작 원가와 시세를 비교해 자작이 이득인지 보여줍니다.</p>
+      <p class="sub" style="font-size:.82rem; color:var(--text-muted); margin:0 0 14px;">씨앗 가격은 <b>상단의 ‘쥬니퍼베리 씨앗’</b>에서 가져옵니다. 소형 재물 획득의 비약 재료비는 이 <b>자작 원가</b>로 자동 계산됩니다.</p>
       <div class="mini-row">
         <div><label>오일 1개당 씨앗 수</label><input type="number" class="mono locked" id="oilSeeds" value="6" readonly tabindex="-1"></div>
         <div><label>최고급 허브오일병 (고정)</label><input type="text" class="mono locked" id="oilHerb" value="1,000" readonly tabindex="-1"></div>
         <div><label>오일 산출률(%)</label><input type="number" class="mono" id="oilYield" min="1" max="100" step="1" value="90" oninput="calcOil()"></div>
-        <div><label>오일 1개 시세(메소) · 상단과 연동</label><input type="text" inputmode="numeric" class="mono comma" id="oilMarket" placeholder="그냥 살 때 가격" oninput="oilMarketChanged()"></div>
       </div>
       <div class="res" id="oilRes" style="margin-top:14px;"></div>
-      <div class="hint">오일 1개에 씨앗 6개 + 최고급 허브오일병 1개(1000메소 고정)가 들어가며, 산출률 90% 기준 일부는 마법의 가루로 변환됩니다. 원가 = (씨앗가×6 + 허브오일병) ÷ 산출률. 제작에는 피로도도 소모됩니다.</div>
+      <div class="hint">오일 1개에 씨앗 6개 + 최고급 허브오일병 1개(1,000메소 고정)가 들어가며, 산출률 90% 기준 일부는 마법의 가루로 변환됩니다. 원가 = (씨앗가×6 + 1,000) ÷ 산출률. 제작에는 피로도도 소모됩니다.</div>
     </div>
 
     <div id="recipes"></div>
@@ -192,8 +191,6 @@
 
     // 가격이 NPC 상점 등으로 고정된 재료 (잠금)
     var FIXED_PRICES = { '최고급 포션 빈 병': 800 };
-    // 자작 원가로 자동 계산되는 재료 (직접 입력 불가)
-    var AUTO_PRICES = { '쥬니퍼베리 씨앗 오일': true };
 
     // 모든 비약에서 쓰이는 고유 재료 목록 (순서 유지)
     var MATERIALS = [];
@@ -209,22 +206,35 @@
       }
     })();
     function matId(name){ return 'mp_'+MATERIALS.indexOf(name); }
-    function priceOf(name){ return gv(matId(name)); }
+    // 오일 1개 자작 원가 = (씨앗가 × 6 + 허브오일병 1,000) ÷ 산출률
+    function oilUnitCost(){
+      var seed = gv(matId('쥬니퍼베리 씨앗'));
+      var per = gv('oilSeeds');
+      var rate = gv('oilYield')/100;
+      var herb = gv('oilHerb');
+      if(seed<=0 || per<=0 || rate<=0) return 0;
+      if(rate>1) rate=1;
+      return (seed*per + herb)/rate;
+    }
+    function priceOf(name){
+      if(name === '쥬니퍼베리 씨앗 오일') return oilUnitCost(); // 자작 원가 사용
+      return gv(matId(name));
+    }
 
     // 상단 재료 가격표 + 비약 카드 렌더링
     function render(){
       // 재료 가격 입력칸
       document.getElementById('matPrices').innerHTML = MATERIALS.map(function(name){
+        // 쥬니퍼베리 씨앗 오일은 씨앗으로 자작한 원가를 쓰므로 입력칸을 두지 않음
+        if (name === '쥬니퍼베리 씨앗 오일') return '';
         var fixed = FIXED_PRICES.hasOwnProperty(name);
-        var tag = fixed ? ' (고정)' : (name==='쥬니퍼베리 씨앗 오일' ? ' (아래 시세와 연동)' : '');
+        var tag = fixed ? ' (고정)' : '';
         var label = name + (tag ? ' <span style="color:var(--text-muted);font-weight:400;">'+tag+'</span>' : '');
         var input;
         if (fixed) {
           input = '<input type="text" inputmode="numeric" class="mono locked" id="'+matId(name)+'" value="'+withCommas(FIXED_PRICES[name])+'" readonly tabindex="-1">';
         } else {
-          var handler = (name === '쥬니퍼베리 씨앗 오일') ? 'oilTopChanged()'
-                      : (name === '쥬니퍼베리 씨앗') ? 'calcOil()'
-                      : 'calcAll()';
+          var handler = (name === '쥬니퍼베리 씨앗') ? 'calcOil()' : 'calcAll()';
           input = '<input type="text" inputmode="numeric" class="mono comma" id="'+matId(name)+'" placeholder="0" oninput="'+handler+'">';
         }
         return '<div class="price-item"><label for="'+matId(name)+'">'+label+'</label>'+input+'</div>';
@@ -320,50 +330,34 @@
       }).join('');
     }
 
-    // 쥬니퍼베리 씨앗 오일 자작 계산
+    // 쥬니퍼베리 씨앗 오일 자작 계산 + 손익분기 가격 안내
     function calcOil(){
-      var seed = priceOf('쥬니퍼베리 씨앗');   // 상단 가격표에서 가져옴
+      var seed = gv(matId('쥬니퍼베리 씨앗'));
       var seedsPerOil = gv('oilSeeds');
       var yieldRate = gv('oilYield')/100;
-      var market = gv('oilMarket');
       var el = document.getElementById('oilRes');
       if(seed<=0 || seedsPerOil<=0 || yieldRate<=0){
-        el.innerHTML = '<div class="line">상단 가격표에서 쥬니퍼베리 씨앗 가격을 입력하세요.</div>';
+        el.innerHTML = '<div class="line">상단 가격표에서 <b>쥬니퍼베리 씨앗</b> 가격을 입력하세요.</div>';
+        calcAll();
         return;
       }
       if(yieldRate>1) yieldRate=1;
-      var herb = gv('oilHerb');  // 최고급 허브오일병(고정 1000)
-      var fee = gv('fee')/100;
-      if(fee<0) fee=0; if(fee>1) fee=1;
-      var effSeeds = seedsPerOil/yieldRate;       // 산출률 반영 평균 씨앗 수
-      var unit = (seed*seedsPerOil + herb)/yieldRate;  // 자작 오일 1개 원가 (씨앗 + 허브오일병, 산출률 반영)
-      var html =
-        '<div class="line"><span>오일 1개당 평균 씨앗 (산출률 '+(yieldRate*100).toFixed(0)+'%)</span><b>'+effSeeds.toFixed(2)+'개</b></div>'+
-        '<div class="line"><span>자작 시 오일 1개 원가 (씨앗+허브오일병)</span><b>'+fmt(unit)+' 메소</b></div>';
-      if(market>0){
-        var net = market*(1-fee);                 // 판매 시 수령액(수수료 차감)
-        var sellProfit = net - unit;              // 오일 만들어 팔았을 때 1개당 순이익
-        var useSave = market - unit;              // 자작해서 직접 쓸 때 1개당 절감액(구매가 대비)
-        html += '<div class="line"><span>오일 시세</span><b>'+fmt(market)+' 메소</b></div>'+
-          '<div class="line"><span>판매 시 수령액 (수수료 '+(fee*100).toFixed(1)+'% 차감)</span><b>'+fmt(net)+' 메소</b></div>'+
-          '<div class="line profit"><span>① 만들어 팔 때 1개당 순이익</span><b class="'+(sellProfit>=0?'pos':'neg')+'">'+fmt(sellProfit)+' 메소</b></div>'+
-          '<div class="line"><span>② 직접 쓸 때 1개당 절감액 (구매가 대비)</span><b class="'+(useSave>=0?'pos':'neg')+'">'+fmt(useSave)+' 메소</b></div>';
-      }
-      el.innerHTML = html;
-    }
+      var herb = gv('oilHerb');
+      var effSeeds = seedsPerOil/yieldRate;   // 산출률 반영 평균 씨앗 수
+      var unit = oilUnitCost();               // 자작 오일 1개 원가
 
-    // 상단 '쥬니퍼베리 씨앗 오일' 가격 ↔ 하단 '오일 1개 시세' 양방향 연동
-    function oilTopChanged(){
-      var top = document.getElementById(matId('쥬니퍼베리 씨앗 오일'));
-      var bot = document.getElementById('oilMarket');
-      var f = withCommas(top.value); top.value = f; if(bot) bot.value = f;
-      calcOil(); calcAll();
-    }
-    function oilMarketChanged(){
-      var top = document.getElementById(matId('쥬니퍼베리 씨앗 오일'));
-      var bot = document.getElementById('oilMarket');
-      var f = withCommas(bot.value); bot.value = f; if(top) top.value = f;
-      calcOil(); calcAll();
+      el.innerHTML =
+        '<div class="line"><span>오일 1개당 평균 씨앗 (산출률 '+(yieldRate*100).toFixed(0)+'%)</span><b>'+effSeeds.toFixed(2)+'개</b></div>'+
+        '<div class="line"><span>씨앗 값 '+fmt(seed)+' × '+effSeeds.toFixed(2)+'개 + 허브오일병</span><b>'+fmt(unit)+' 메소</b></div>'+
+        '<div class="line profit"><span>🌿 자작 시 오일 1개 원가</span><b class="pos">'+fmt(unit)+' 메소</b></div>'+
+        '<div class="line" style="margin-top:10px; border-top:1px solid var(--border); padding-top:12px">'+
+          '<span>💡 경매장 오일이 <b>'+fmt(unit)+' 메소</b>보다</span>'+
+        '</div>'+
+        '<div class="line"><span style="padding-left:14px">· 싸면 → <b class="pos">사는 게 이득</b></span></div>'+
+        '<div class="line"><span style="padding-left:14px">· 비싸면 → <b class="pos">직접 만드는 게 이득</b></span></div>'+
+        '<div class="hint" style="margin-top:8px">즉 오일 1개를 <b>'+fmt(unit)+' 메소 이하</b>로 살 수 있으면 사는 편이 낫고, 그보다 비싸면 씨앗을 사서 직접 만드는 게 이득입니다. (아래 소재비 재료비는 자작 원가 '+fmt(unit)+' 메소로 계산됩니다.)</div>';
+
+      calcAll();
     }
 
     render();
